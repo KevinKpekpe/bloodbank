@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             BloodTypeSeeder::class,
             AdminSeeder::class,
+            BloodBankSeeder::class,
         ]);
 
         // Créer un utilisateur de test si nécessaire

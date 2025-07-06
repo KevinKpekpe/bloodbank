@@ -1,0 +1,328 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\BloodStock;
+use App\Models\StockMovement;
+use App\Models\BloodBank;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+
+class StockController extends Controller
+{
+    /**
+     * Récupérer le stock d'une banque de sang
+     */
+    public function index(Request $request)
+    {
+        $query = BloodStock::with(['bloodBank', 'bloodType']);
+
+        if ($request->has('blood_bank_id')) {
+            $query->where('blood_bank_id', $request->blood_bank_id);
+        }
+
+        if ($request->has('blood_type_id')) {
+            $query->where('blood_type_id', $request->blood_type_id);
+        }
+
+        $stocks = $query->get();
+
+        return response()->json([
+            'stocks' => $stocks
+        ]);
+    }
+
+    /**
+     * Récupérer un stock spécifique
+     */
+    public function show($id)
+    {
+        $stock = BloodStock::with(['bloodBank', 'bloodType'])->find($id);
+
+        if (!$stock) {
+            return response()->json([
+                'message' => 'Stock non trouvé'
+            ], 404);
+        }
+
+        return response()->json([
+            'stock' => $stock
+        ]);
+    }
+
+    /**
+     * Mettre à jour le stock (ajustement manuel)
+     */
+    public function update(Request $request, $id)
+    {
+        $stock = BloodStock::find($id);
+
+        if (!$stock) {
+            return response()->json([
+                'message' => 'Stock non trouvé'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'quantity_ml' => 'required|integer|min:0',
+            'minimum_threshold' => 'sometimes|integer|min:0',
+            'maximum_capacity' => 'sometimes|integer|min:0',
+            'reason' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Erreur de validation',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $oldQuantity = $stock->quantity_ml;
+        $newQuantity = $request->quantity_ml;
+        $difference = $newQuantity - $oldQuantity;
+
+        DB::transaction(function () use ($stock, $request, $difference) {
+            // Mettre à jour le stock
+            $stock->update([
+                'quantity_ml' => $request->quantity_ml,
+                'minimum_threshold' => $request->minimum_threshold ?? $stock->minimum_threshold,
+                'maximum_capacity' => $request->maximum_capacity ?? $stock->maximum_capacity,
+                'last_updated' => now(),
+            ]);
+
+            // Enregistrer le mouvement si il y a une différence
+            if ($difference != 0) {
+                StockMovement::create([
+                    'blood_bank_id' => $stock->blood_bank_id,
+                    'blood_type_id' => $stock->blood_type_id,
+                    'quantity_ml' => abs($difference),
+                    'movement_type' => $difference > 0 ? 'in' : 'out',
+                    'reason' => $request->reason,
+                    'reference_id' => null,
+                    'reference_type' => null,
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Stock mis à jour avec succès',
+            'stock' => $stock->load(['bloodBank', 'bloodType'])
+        ]);
+    }
+
+    /**
+     * Ajuster le stock (ajout ou retrait)
+     */
+    public function adjust(Request $request, $id)
+    {
+        $stock = BloodStock::find($id);
+
+        if (!$stock) {
+            return response()->json([
+                'message' => 'Stock non trouvé'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'quantity_ml' => 'required|integer',
+            'movement_type' => 'required|in:in,out',
+            'reason' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Erreur de validation',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Vérifier qu'on ne retire pas plus que disponible
+        if ($request->movement_type === 'out' && $request->quantity_ml > $stock->quantity_ml) {
+            return response()->json([
+                'message' => 'Stock insuffisant pour ce retrait'
+            ], 400);
+        }
+
+        DB::transaction(function () use ($stock, $request) {
+            // Mettre à jour le stock
+            if ($request->movement_type === 'in') {
+                $stock->increment('quantity_ml', $request->quantity_ml);
+            } else {
+                $stock->decrement('quantity_ml', $request->quantity_ml);
+            }
+
+            $stock->update(['last_updated' => now()]);
+
+            // Enregistrer le mouvement
+            StockMovement::create([
+                'blood_bank_id' => $stock->blood_bank_id,
+                'blood_type_id' => $stock->blood_type_id,
+                'quantity_ml' => $request->quantity_ml,
+                'movement_type' => $request->movement_type,
+                'reason' => $request->reason,
+                'reference_id' => null,
+                'reference_type' => null,
+            ]);
+        });
+
+        return response()->json([
+            'message' => 'Stock ajusté avec succès',
+            'stock' => $stock->load(['bloodBank', 'bloodType'])
+        ]);
+    }
+
+    /**
+     * Récupérer l'historique des mouvements de stock
+     */
+    public function movements(Request $request)
+    {
+        $query = StockMovement::with(['bloodBank', 'bloodType']);
+
+        if ($request->has('blood_bank_id')) {
+            $query->where('blood_bank_id', $request->blood_bank_id);
+        }
+
+        if ($request->has('blood_type_id')) {
+            $query->where('blood_type_id', $request->blood_type_id);
+        }
+
+        if ($request->has('movement_type')) {
+            $query->where('movement_type', $request->movement_type);
+        }
+
+        if ($request->has('date_from')) {
+            $query->where('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->has('date_to')) {
+            $query->where('created_at', '<=', $request->date_to);
+        }
+
+        $movements = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        return response()->json([
+            'movements' => $movements
+        ]);
+    }
+
+    /**
+     * Récupérer les alertes de stock faible
+     */
+    public function lowStockAlerts()
+    {
+        $lowStocks = BloodStock::with(['bloodBank', 'bloodType'])
+                              ->whereRaw('quantity_ml <= minimum_threshold')
+                              ->get();
+
+        return response()->json([
+            'low_stock_alerts' => $lowStocks,
+            'total_alerts' => $lowStocks->count()
+        ]);
+    }
+
+    /**
+     * Récupérer les statistiques de stock
+     */
+    public function statistics(Request $request)
+    {
+        $query = BloodStock::with(['bloodBank', 'bloodType']);
+
+        if ($request->has('blood_bank_id')) {
+            $query->where('blood_bank_id', $request->blood_bank_id);
+        }
+
+        $stocks = $query->get();
+
+        $statistics = [
+            'total_stocks' => $stocks->count(),
+            'total_quantity_ml' => $stocks->sum('quantity_ml'),
+            'low_stock_count' => $stocks->where('quantity_ml', '<=', 'minimum_threshold')->count(),
+            'empty_stocks' => $stocks->where('quantity_ml', 0)->count(),
+            'by_blood_type' => $stocks->groupBy('blood_type.name')
+                                    ->map(function ($group) {
+                                        return [
+                                            'total_quantity' => $group->sum('quantity_ml'),
+                                            'stock_count' => $group->count(),
+                                        ];
+                                    }),
+            'by_blood_bank' => $stocks->groupBy('blood_bank.name')
+                                    ->map(function ($group) {
+                                        return [
+                                            'total_quantity' => $group->sum('quantity_ml'),
+                                            'stock_count' => $group->count(),
+                                        ];
+                                    }),
+        ];
+
+        return response()->json([
+            'statistics' => $statistics
+        ]);
+    }
+
+    /**
+     * Créer un nouveau stock
+     */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'blood_bank_id' => 'required|exists:blood_banks,id',
+            'blood_type_id' => 'required|exists:blood_types,id',
+            'quantity_ml' => 'required|integer|min:0',
+            'minimum_threshold' => 'required|integer|min:0',
+            'maximum_capacity' => 'required|integer|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Erreur de validation',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Vérifier qu'il n'y a pas déjà un stock pour cette combinaison
+        $existingStock = BloodStock::where('blood_bank_id', $request->blood_bank_id)
+                                  ->where('blood_type_id', $request->blood_type_id)
+                                  ->first();
+
+        if ($existingStock) {
+            return response()->json([
+                'message' => 'Un stock existe déjà pour cette banque et ce type de sang'
+            ], 400);
+        }
+
+        $stock = BloodStock::create($request->all());
+
+        return response()->json([
+            'message' => 'Stock créé avec succès',
+            'stock' => $stock->load(['bloodBank', 'bloodType'])
+        ], 201);
+    }
+
+    /**
+     * Supprimer un stock
+     */
+    public function destroy($id)
+    {
+        $stock = BloodStock::find($id);
+
+        if (!$stock) {
+            return response()->json([
+                'message' => 'Stock non trouvé'
+            ], 404);
+        }
+
+        // Vérifier qu'il n'y a pas de quantité en stock
+        if ($stock->quantity_ml > 0) {
+            return response()->json([
+                'message' => 'Impossible de supprimer un stock avec du contenu'
+            ], 400);
+        }
+
+        $stock->delete();
+
+        return response()->json([
+            'message' => 'Stock supprimé avec succès'
+        ]);
+    }
+}
