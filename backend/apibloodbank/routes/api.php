@@ -9,6 +9,11 @@ use App\Http\Controllers\DonationController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\BloodRequestController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\EmergencyController;
+use App\Http\Controllers\GeolocationController;
+use App\Http\Controllers\PartnershipController;
+use App\Http\Controllers\ContactController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +40,30 @@ Route::prefix('blood-banks')->group(function () {
     Route::get('/{id}', [BloodBankController::class, 'show']);
     Route::get('/{id}/stock', [BloodBankController::class, 'getStock']);
     Route::post('/search/nearby', [BloodBankController::class, 'searchNearby']);
+});
+
+// Routes pour la géolocalisation
+Route::prefix('geolocation')->group(function () {
+    Route::post('/geocode', [GeolocationController::class, 'geocode']); // Publique
+    Route::get('/statistics', [GeolocationController::class, 'statistics']); // Publique
+
+    // Routes protégées
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('/nearby-banks', [GeolocationController::class, 'nearbyBanks']);
+        Route::post('/nearby-donors', [GeolocationController::class, 'nearbyDonors']);
+    });
+});
+
+// Routes pour les contacts
+Route::post('/contact/send', [ContactController::class, 'send']); // Publique
+
+// Routes protégées pour l'administration des contacts
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/contacts', [ContactController::class, 'index']);
+    Route::patch('/contacts/{id}/process', [ContactController::class, 'markAsProcessed']);
+    Route::patch('/contacts/{id}/progress', [ContactController::class, 'markAsInProgress']);
+    Route::post('/contacts/{id}/respond', [ContactController::class, 'respond']);
+    Route::get('/contacts/statistics', [ContactController::class, 'statistics']);
 });
 
 // Routes protégées par authentification
@@ -112,6 +141,26 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/fulfill', [BloodRequestController::class, 'fulfill']);
         Route::get('/statistics', [BloodRequestController::class, 'statistics']);
     });
+
+    // Routes pour les notifications (protégées)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::patch('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+
+    // Routes pour les urgences (protégées)
+    Route::post('/emergencies/declare', [EmergencyController::class, 'declare']);
+    Route::post('/emergencies/find-banks', [EmergencyController::class, 'findAvailableBanks']);
+    Route::get('/emergencies/active', [EmergencyController::class, 'activeEmergencies']);
+    Route::patch('/emergencies/{id}/status', [EmergencyController::class, 'updateStatus']);
+
+    // Routes pour les partenariats (protégées)
+    Route::get('/partnerships', [PartnershipController::class, 'index']);
+    Route::post('/partnerships/request', [PartnershipController::class, 'requestPartnership']);
+    Route::patch('/partnerships/{id}/respond', [PartnershipController::class, 'respondToPartnership']);
+    Route::patch('/partnerships/{id}/terminate', [PartnershipController::class, 'terminatePartnership']);
+    Route::get('/partnerships/statistics', [PartnershipController::class, 'statistics']);
 
     // Route de test pour l'utilisateur connecté
     Route::get('/user', function (Request $request) {

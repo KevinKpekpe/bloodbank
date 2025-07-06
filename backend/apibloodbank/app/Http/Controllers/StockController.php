@@ -5,12 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\BloodStock;
 use App\Models\StockMovement;
 use App\Models\BloodBank;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 
 class StockController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     /**
      * Récupérer le stock d'une banque de sang
      */
@@ -144,7 +152,10 @@ class StockController extends Controller
             ], 400);
         }
 
-        DB::transaction(function () use ($stock, $request) {
+        $oldQuantity = $stock->quantity_ml;
+        $wasLowStock = $oldQuantity <= $stock->minimum_threshold;
+
+        DB::transaction(function () use ($stock, $request, $oldQuantity, $wasLowStock) {
             // Mettre à jour le stock
             if ($request->movement_type === 'in') {
                 $stock->increment('quantity_ml', $request->quantity_ml);
@@ -165,6 +176,14 @@ class StockController extends Controller
                 'reference_type' => null,
             ]);
         });
+
+        // Recharger le stock pour avoir les données à jour
+        $stock->refresh();
+
+        // Vérifier si le stock est maintenant faible et envoyer une alerte
+        if (!$wasLowStock && $stock->quantity_ml <= $stock->minimum_threshold) {
+            $this->notificationService->sendLowStockAlert($stock, $stock->minimum_threshold);
+        }
 
         return response()->json([
             'message' => 'Stock ajusté avec succès',
