@@ -46,11 +46,13 @@ Route::prefix('blood-banks')->group(function () {
 Route::prefix('geolocation')->group(function () {
     Route::post('/geocode', [GeolocationController::class, 'geocode']); // Publique
     Route::get('/statistics', [GeolocationController::class, 'statistics']); // Publique
+    Route::post('/search-by-city', [GeolocationController::class, 'searchBanksByCity']); // Publique
 
     // Routes protégées
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/nearby-banks', [GeolocationController::class, 'nearbyBanks']);
         Route::post('/nearby-donors', [GeolocationController::class, 'nearbyDonors']);
+        Route::post('/update-bank-coordinates', [GeolocationController::class, 'updateBankCoordinates'])->middleware('role:admin');
     });
 });
 
@@ -89,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', [BloodBankController::class, 'update'])->middleware('role:admin,blood_bank');
         Route::delete('/{id}', [BloodBankController::class, 'destroy'])->middleware('role:admin');
         Route::post('/{id}/verify', [BloodBankController::class, 'verify'])->middleware('role:admin');
+        Route::get('/{id}/dashboard', [BloodBankController::class, 'dashboard']);
     });
 
     // Routes pour les dons (Donor, Blood Bank, Admin)

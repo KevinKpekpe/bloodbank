@@ -249,4 +249,42 @@ class BloodBankController extends Controller
             'blood_bank' => $bloodBank
         ]);
     }
+
+    /**
+     * Dashboard d'une banque de sang : infos, admin, stocks, stats
+     */
+    public function dashboard($id)
+    {
+        $bank = BloodBank::with([
+            'admin',
+            'bloodStocks.bloodType',
+            'donations',
+            'stockMovements'
+        ])->find($id);
+
+        if (!$bank) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Banque de sang non trouvée'
+            ], 404);
+        }
+
+        $totalStock = $bank->getTotalStock();
+        $lowStock = $bank->hasLowStock();
+        $donationsCount = $bank->donations->count();
+        $lastMovements = $bank->stockMovements()->latest()->take(5)->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'bank' => $bank,
+                'admin' => $bank->admin,
+                'blood_stocks' => $bank->bloodStocks,
+                'total_stock' => $totalStock,
+                'has_low_stock' => $lowStock,
+                'donations_count' => $donationsCount,
+                'last_stock_movements' => $lastMovements,
+            ]
+        ]);
+    }
 }

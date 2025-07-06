@@ -27,25 +27,32 @@ class GeolocationController extends Controller
         }
 
         try {
-            $response = Http::get('https://nominatim.openstreetmap.org/search', [
+            $response = Http::withHeaders([
+                'User-Agent' => 'BloodBank-App/1.0',
+                'Accept' => 'application/json',
+            ])->timeout(10)->get('https://nominatim.openstreetmap.org/search', [
                 'q' => $request->address,
                 'format' => 'json',
                 'limit' => 1,
                 'addressdetails' => 1,
             ]);
 
-            if ($response->successful() && !empty($response->json())) {
-                $result = $response->json()[0];
+            if ($response->successful()) {
+                $data = $response->json();
 
-                return response()->json([
-                    'success' => true,
-                    'data' => [
-                        'latitude' => (float) $result['lat'],
-                        'longitude' => (float) $result['lon'],
-                        'display_name' => $result['display_name'],
-                        'address' => $result['address'] ?? [],
-                    ]
-                ]);
+                if (!empty($data)) {
+                    $result = $data[0];
+
+                    return response()->json([
+                        'success' => true,
+                        'data' => [
+                            'latitude' => (float) $result['lat'],
+                            'longitude' => (float) $result['lon'],
+                            'display_name' => $result['display_name'],
+                            'address' => $result['address'] ?? [],
+                        ]
+                    ]);
+                }
             }
 
             return response()->json([
@@ -139,27 +146,12 @@ class GeolocationController extends Controller
 
         $radius = $request->radius_km ?? 50;
 
-        $donors = User::whereHas('roles', function ($query) {
+        // Note: Les donneurs n'ont pas de coordonnées GPS dans la base de données actuelle
+        // Cette fonctionnalité nécessiterait l'ajout des champs latitude/longitude à la table users
+        $donors = User::whereHas('role', function ($query) {
             $query->where('name', 'donor');
         })->with(['bloodType', 'donations'])
-        ->get()
-        ->map(function ($donor) use ($request) {
-            if ($donor->latitude && $donor->longitude) {
-                $distance = $this->calculateDistance(
-                    $request->latitude, $request->longitude,
-                    $donor->latitude, $donor->longitude
-                );
-
-                $donor->distance_km = round($distance, 2);
-                return $donor;
-            }
-            return null;
-        })
-        ->filter(function ($donor) use ($radius) {
-            return $donor && $donor->distance_km <= $radius;
-        })
-        ->sortBy('distance_km')
-        ->values();
+        ->get();
 
         // Filtrer par type de sang si spécifié
         if ($request->has('blood_type_id')) {
@@ -173,6 +165,7 @@ class GeolocationController extends Controller
             'donors' => $donors,
             'total_found' => $donors->count(),
             'search_radius_km' => $radius,
+            'note' => 'La géolocalisation des donneurs nécessite l\'ajout des champs latitude/longitude à la table users'
         ]);
     }
 
@@ -186,15 +179,12 @@ class GeolocationController extends Controller
             ->whereNotNull('longitude')
             ->count();
 
-        $totalDonors = User::whereHas('roles', function ($query) {
+        $totalDonors = User::whereHas('role', function ($query) {
             $query->where('name', 'donor');
         })->count();
 
-        $donorsWithLocation = User::whereHas('roles', function ($query) {
-            $query->where('name', 'donor');
-        })->whereNotNull('latitude')
-        ->whereNotNull('longitude')
-        ->count();
+        // Note: Les donneurs n'ont pas de coordonnées GPS dans la base de données actuelle
+        $donorsWithLocation = 0;
 
         return response()->json([
             'success' => true,
@@ -209,7 +199,8 @@ class GeolocationController extends Controller
                     'with_location' => $donorsWithLocation,
                     'coverage_percentage' => $totalDonors > 0 ? round(($donorsWithLocation / $totalDonors) * 100, 2) : 0,
                 ],
-            ]
+            ],
+            'note' => 'La géolocalisation des donneurs nécessite l\'ajout des champs latitude/longitude à la table users'
         ]);
     }
 
@@ -230,5 +221,98 @@ class GeolocationController extends Controller
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earthRadius * $c;
+    }
+
+    /**
+     * Mettre à jour les coordonnées GPS des banques de sang
+     */
+    public function updateBankCoordinates()
+    {
+        try {
+            $banksWithoutCoordinates = BloodBank::whereNull('latitude')
+                ->orWhereNull('longitude')
+                ->get();
+
+            $updated = 0;
+            $errors = [];
+
+            foreach ($banksWithoutCoordinates as $bank) {
+                try {
+                    $fullAddress = $bank->getFullAddressAttribute();
+
+                    $response = Http::withHeaders([
+                        'User-Agent' => 'BloodBank-App/1.0',
+                        'Accept' => 'application/json',
+                    ])->timeout(10)->get('https://nominatim.openstreetmap.org/search', [
+                        'q' => $fullAddress,
+                        'format' => 'json',
+                        'limit' => 1,
+                    ]);
+
+                    if ($response->successful() && !empty($response->json())) {
+                        $result = $response->json()[0];
+
+                        $bank->update([
+                            'latitude' => (float) $result['lat'],
+                            'longitude' => (float) $result['lon'],
+                        ]);
+
+                        $updated++;
+
+                        // Pause pour respecter les limites de l'API
+                        sleep(1);
+                    } else {
+                        $errors[] = "Impossible de géocoder l'adresse pour {$bank->name}: {$fullAddress}";
+                    }
+                } catch (\Exception $e) {
+                    $errors[] = "Erreur lors de la mise à jour de {$bank->name}: " . $e->getMessage();
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Mise à jour terminée",
+                'data' => [
+                    'banks_updated' => $updated,
+                    'total_processed' => $banksWithoutCoordinates->count(),
+                    'errors' => $errors
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la mise à jour: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Rechercher des banques de sang par ville
+     */
+    public function searchBanksByCity(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'city' => 'required|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Erreur de validation',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $banks = BloodBank::where('city', 'like', '%' . $request->city . '%')
+            ->orWhere('address', 'like', '%' . $request->city . '%')
+            ->with(['bloodStocks.bloodType'])
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'banks' => $banks,
+            'total_found' => $banks->count(),
+            'search_city' => $request->city
+        ]);
     }
 }
