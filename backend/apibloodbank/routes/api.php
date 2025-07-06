@@ -21,6 +21,15 @@ use App\Http\Controllers\ContactController;
 |--------------------------------------------------------------------------
 */
 
+// Route de test pour vérifier la connexion front-back
+Route::get('/ping', function () {
+    return response()->json([
+        'message' => 'API BloodBank connectée avec succès !',
+        'timestamp' => now()->toISOString(),
+        'status' => 'success'
+    ]);
+});
+
 // Routes publiques
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
