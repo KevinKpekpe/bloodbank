@@ -1,0 +1,3291 @@
+{
+    "variable": [
+        {
+            "id": "baseUrl",
+            "key": "baseUrl",
+            "type": "string",
+            "name": "string",
+            "value": "http:\/\/localhost:8000"
+        }
+    ],
+    "info": {
+        "name": "API BloodBank - Documentation",
+        "_postman_id": "f534e36a-cf99-4520-ba1d-1fb662703e93",
+        "description": "API compl\u00e8te pour la gestion des dons de sang, banques de sang, urgences et g\u00e9olocalisation.",
+        "schema": "https:\/\/schema.getpostman.com\/json\/collection\/v2.1.0\/collection.json",
+        "version": "1.0.0"
+    },
+    "item": [
+        {
+            "name": "Authentification",
+            "description": "\nAPIs pour la gestion de l'authentification des utilisateurs",
+            "item": [
+                {
+                    "name": "Inscription d'un nouvel utilisateur",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/register",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/register"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"Jean Dupont\",\"email\":\"jean.dupont@example.com\",\"password\":\"password123\",\"phone\":\"+33123456789\",\"address\":\"123 Rue de la Paix\",\"city\":\"Paris\",\"postal_code\":\"75001\",\"blood_type_id\":1,\"date_of_birth\":\"2025-07-06T18:32:50\",\"gender\":\"male\",\"role\":\"donor\",\"password_confirmation\":\"password123\",\"country\":\"France\",\"latitude\":48.8566,\"longitude\":2.3522}"
+                        },
+                        "description": "Permet \u00e0 un utilisateur de s'inscrire sur la plateforme avec un r\u00f4le sp\u00e9cifique.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 201,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Utilisateur cr\u00e9\u00e9 avec succ\u00e8s\",\n  \"user\": {\n    \"id\": 1,\n    \"name\": \"Jean Dupont\",\n    \"email\": \"jean.dupont@example.com\",\n    \"phone\": \"+33123456789\",\n    \"role\": {\n      \"id\": 2,\n      \"name\": \"donor\"\n    },\n    \"blood_type\": {\n      \"id\": 1,\n      \"name\": \"A+\"\n    }\n  }\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 422,
+                            "body": "{\n  \"message\": \"Erreur de validation\",\n  \"errors\": {\n    \"email\": [\"L'adresse email est d\u00e9j\u00e0 utilis\u00e9e.\"]\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Connexion utilisateur",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/login",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/login"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"email\":\"jean.dupont@example.com\",\"password\":\"password123\"}"
+                        },
+                        "description": "Authentifie un utilisateur et retourne un token d'acc\u00e8s.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"Connexion r\u00e9ussie\",\n  \"user\": {\n    \"id\": 1,\n    \"name\": \"Jean Dupont\",\n    \"email\": \"jean.dupont@example.com\",\n    \"role\": {\n      \"name\": \"donor\"\n    }\n  },\n  \"token\": \"1|abc123def456...\"\n}",
+                            "name": ""
+                        },
+                        {
+                            "header": [],
+                            "code": 401,
+                            "body": "{\n  \"message\": \"Identifiants invalides\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "D\u00e9connexion utilisateur",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/logout",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/logout"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Invalide le token d'acc\u00e8s de l'utilisateur connect\u00e9."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"message\": \"D\u00e9connexion r\u00e9ussie\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Profil utilisateur connect\u00e9",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/me",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/me"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "R\u00e9cup\u00e8re les informations du profil de l'utilisateur connect\u00e9."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"user\": {\n    \"id\": 1,\n    \"name\": \"Jean Dupont\",\n    \"email\": \"jean.dupont@example.com\",\n    \"phone\": \"+33123456789\",\n    \"role\": {\n      \"name\": \"donor\"\n    },\n    \"blood_type\": {\n      \"name\": \"A+\"\n    }\n  }\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Rafra\u00eechir le token",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/auth\/refresh",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/auth\/refresh"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "G\u00e9n\u00e8re un nouveau token d'acc\u00e8s pour l'utilisateur connect\u00e9."
+                    },
+                    "response": [
+                        {
+                            "header": [],
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"token\": \"2|xyz789abc123...\"\n}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Endpoints",
+            "description": "",
+            "item": [
+                {
+                    "name": "R\u00e9cup\u00e9rer tous les types de sang",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-types",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-types"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 200,
+                            "body": "{\"blood_types\":[{\"id\":1,\"name\":\"A+\",\"description\":\"Groupe sanguin A positif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"},{\"id\":2,\"name\":\"A-\",\"description\":\"Groupe sanguin A n\\u00e9gatif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"},{\"id\":5,\"name\":\"AB+\",\"description\":\"Groupe sanguin AB positif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"},{\"id\":6,\"name\":\"AB-\",\"description\":\"Groupe sanguin AB n\\u00e9gatif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"},{\"id\":3,\"name\":\"B+\",\"description\":\"Groupe sanguin B positif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"},{\"id\":4,\"name\":\"B-\",\"description\":\"Groupe sanguin B n\\u00e9gatif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"},{\"id\":7,\"name\":\"O+\",\"description\":\"Groupe sanguin O positif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"},{\"id\":8,\"name\":\"O-\",\"description\":\"Groupe sanguin O n\\u00e9gatif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"}]}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer un type de sang sp\u00e9cifique",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-types\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-types\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "The ID of the blood type."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 200,
+                            "body": "{\"blood_type\":{\"id\":1,\"name\":\"A+\",\"description\":\"Groupe sanguin A positif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"}}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer les types compatibles pour un type donn\u00e9",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-types\/:id\/compatible",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-types\/:id\/compatible",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "The ID of the blood type."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 200,
+                            "body": "{\"blood_type\":{\"id\":1,\"name\":\"A+\",\"description\":\"Groupe sanguin A positif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"},\"compatible_types\":[{\"id\":1,\"name\":\"A+\",\"description\":\"Groupe sanguin A positif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"},{\"id\":5,\"name\":\"AB+\",\"description\":\"Groupe sanguin AB positif\",\"created_at\":\"2025-07-06T17:26:53.000000Z\",\"updated_at\":\"2025-07-06T17:26:53.000000Z\"}]}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer toutes les banques de sang actives",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-banks",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-banks"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 200,
+                            "body": "{\"blood_banks\":{\"current_page\":1,\"data\":[{\"id\":1,\"name\":\"Centre de Transfusion Sanguine de Paris\",\"description\":\"Centre principal de transfusion sanguine de la r\\u00e9gion parisienne\",\"phone\":\"01 44 49 30 00\",\"email\":\"contact@cts-paris.fr\",\"website\":\"https:\\\/\\\/www.cts-paris.fr\",\"address\":\"6 rue Alexandre Cabanel\",\"city\":\"Paris\",\"postal_code\":\"75015\",\"country\":\"France\",\"latitude\":\"48.85660000\",\"longitude\":\"2.35220000\",\"is_verified\":true,\"is_active\":true,\"partnership_level\":\"public\",\"admin_id\":1,\"created_at\":\"2025-07-06T17:33:10.000000Z\",\"updated_at\":\"2025-07-06T17:33:10.000000Z\",\"admin\":{\"id\":1,\"name\":\"Administrateur\",\"email\":\"admin@bloodbank.com\",\"email_verified_at\":\"2025-07-06T17:26:54.000000Z\",\"created_at\":\"2025-07-06T17:26:54.000000Z\",\"updated_at\":\"2025-07-06T17:26:54.000000Z\",\"phone\":null,\"address\":null,\"city\":null,\"postal_code\":null,\"blood_type_id\":null,\"date_of_birth\":null,\"gender\":null,\"is_eligible_donor\":true,\"role_id\":1},\"blood_stocks\":[]},{\"id\":2,\"name\":\"\\u00c9tablissement Fran\\u00e7ais du Sang - Lyon\",\"description\":\"Centre de collecte et de distribution de sang \\u00e0 Lyon\",\"phone\":\"04 72 68 70 00\",\"email\":\"contact@efs-lyon.fr\",\"website\":\"https:\\\/\\\/www.efs.sante.fr\",\"address\":\"1 rue du Professeur Calmette\",\"city\":\"Lyon\",\"postal_code\":\"69003\",\"country\":\"France\",\"latitude\":\"45.75780000\",\"longitude\":\"4.83200000\",\"is_verified\":true,\"is_active\":true,\"partnership_level\":\"public\",\"admin_id\":1,\"created_at\":\"2025-07-06T17:33:10.000000Z\",\"updated_at\":\"2025-07-06T17:33:10.000000Z\",\"admin\":{\"id\":1,\"name\":\"Administrateur\",\"email\":\"admin@bloodbank.com\",\"email_verified_at\":\"2025-07-06T17:26:54.000000Z\",\"created_at\":\"2025-07-06T17:26:54.000000Z\",\"updated_at\":\"2025-07-06T17:26:54.000000Z\",\"phone\":null,\"address\":null,\"city\":null,\"postal_code\":null,\"blood_type_id\":null,\"date_of_birth\":null,\"gender\":null,\"is_eligible_donor\":true,\"role_id\":1},\"blood_stocks\":[]},{\"id\":3,\"name\":\"Centre Hospitalier Universitaire de Marseille\",\"description\":\"Banque de sang du CHU de Marseille\",\"phone\":\"04 91 38 00 00\",\"email\":\"banque.sang@chu-marseille.fr\",\"website\":\"https:\\\/\\\/www.chu-marseille.fr\",\"address\":\"264 rue Saint-Pierre\",\"city\":\"Marseille\",\"postal_code\":\"13005\",\"country\":\"France\",\"latitude\":\"43.29650000\",\"longitude\":\"5.36980000\",\"is_verified\":true,\"is_active\":true,\"partnership_level\":\"public\",\"admin_id\":1,\"created_at\":\"2025-07-06T17:33:10.000000Z\",\"updated_at\":\"2025-07-06T17:33:10.000000Z\",\"admin\":{\"id\":1,\"name\":\"Administrateur\",\"email\":\"admin@bloodbank.com\",\"email_verified_at\":\"2025-07-06T17:26:54.000000Z\",\"created_at\":\"2025-07-06T17:26:54.000000Z\",\"updated_at\":\"2025-07-06T17:26:54.000000Z\",\"phone\":null,\"address\":null,\"city\":null,\"postal_code\":null,\"blood_type_id\":null,\"date_of_birth\":null,\"gender\":null,\"is_eligible_donor\":true,\"role_id\":1},\"blood_stocks\":[]},{\"id\":4,\"name\":\"Clinique Priv\\u00e9e du Sang - Toulouse\",\"description\":\"Clinique priv\\u00e9e sp\\u00e9cialis\\u00e9e dans la transfusion sanguine\",\"phone\":\"05 61 32 25 00\",\"email\":\"info@clinique-sang-toulouse.fr\",\"website\":\"https:\\\/\\\/www.clinique-sang-toulouse.fr\",\"address\":\"15 avenue des Minimes\",\"city\":\"Toulouse\",\"postal_code\":\"31200\",\"country\":\"France\",\"latitude\":\"43.60470000\",\"longitude\":\"1.44420000\",\"is_verified\":true,\"is_active\":true,\"partnership_level\":\"private\",\"admin_id\":1,\"created_at\":\"2025-07-06T17:33:10.000000Z\",\"updated_at\":\"2025-07-06T17:33:10.000000Z\",\"admin\":{\"id\":1,\"name\":\"Administrateur\",\"email\":\"admin@bloodbank.com\",\"email_verified_at\":\"2025-07-06T17:26:54.000000Z\",\"created_at\":\"2025-07-06T17:26:54.000000Z\",\"updated_at\":\"2025-07-06T17:26:54.000000Z\",\"phone\":null,\"address\":null,\"city\":null,\"postal_code\":null,\"blood_type_id\":null,\"date_of_birth\":null,\"gender\":null,\"is_eligible_donor\":true,\"role_id\":1},\"blood_stocks\":[]},{\"id\":5,\"name\":\"Association Donneurs de Sang B\\u00e9n\\u00e9voles - Nantes\",\"description\":\"Association de donneurs b\\u00e9n\\u00e9voles de la r\\u00e9gion nantaise\",\"phone\":\"02 40 20 50 00\",\"email\":\"contact@donneurs-nantes.fr\",\"website\":\"https:\\\/\\\/www.donneurs-nantes.fr\",\"address\":\"8 quai Moncousu\",\"city\":\"Nantes\",\"postal_code\":\"44000\",\"country\":\"France\",\"latitude\":\"47.21840000\",\"longitude\":\"-1.55360000\",\"is_verified\":true,\"is_active\":true,\"partnership_level\":\"associative\",\"admin_id\":1,\"created_at\":\"2025-07-06T17:33:10.000000Z\",\"updated_at\":\"2025-07-06T17:33:10.000000Z\",\"admin\":{\"id\":1,\"name\":\"Administrateur\",\"email\":\"admin@bloodbank.com\",\"email_verified_at\":\"2025-07-06T17:26:54.000000Z\",\"created_at\":\"2025-07-06T17:26:54.000000Z\",\"updated_at\":\"2025-07-06T17:26:54.000000Z\",\"phone\":null,\"address\":null,\"city\":null,\"postal_code\":null,\"blood_type_id\":null,\"date_of_birth\":null,\"gender\":null,\"is_eligible_donor\":true,\"role_id\":1},\"blood_stocks\":[]}],\"first_page_url\":\"http:\\\/\\\/localhost:8000\\\/api\\\/blood-banks?page=1\",\"from\":1,\"last_page\":1,\"last_page_url\":\"http:\\\/\\\/localhost:8000\\\/api\\\/blood-banks?page=1\",\"links\":[{\"url\":null,\"label\":\"&laquo; Previous\",\"active\":false},{\"url\":\"http:\\\/\\\/localhost:8000\\\/api\\\/blood-banks?page=1\",\"label\":\"1\",\"active\":true},{\"url\":null,\"label\":\"Next &raquo;\",\"active\":false}],\"next_page_url\":null,\"path\":\"http:\\\/\\\/localhost:8000\\\/api\\\/blood-banks\",\"per_page\":15,\"prev_page_url\":null,\"to\":5,\"total\":5}}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer une banque de sang sp\u00e9cifique",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-banks\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-banks\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "The ID of the blood bank."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 200,
+                            "body": "{\"blood_bank\":{\"id\":1,\"name\":\"Centre de Transfusion Sanguine de Paris\",\"description\":\"Centre principal de transfusion sanguine de la r\\u00e9gion parisienne\",\"phone\":\"01 44 49 30 00\",\"email\":\"contact@cts-paris.fr\",\"website\":\"https:\\\/\\\/www.cts-paris.fr\",\"address\":\"6 rue Alexandre Cabanel\",\"city\":\"Paris\",\"postal_code\":\"75015\",\"country\":\"France\",\"latitude\":\"48.85660000\",\"longitude\":\"2.35220000\",\"is_verified\":true,\"is_active\":true,\"partnership_level\":\"public\",\"admin_id\":1,\"created_at\":\"2025-07-06T17:33:10.000000Z\",\"updated_at\":\"2025-07-06T17:33:10.000000Z\",\"admin\":{\"id\":1,\"name\":\"Administrateur\",\"email\":\"admin@bloodbank.com\",\"email_verified_at\":\"2025-07-06T17:26:54.000000Z\",\"created_at\":\"2025-07-06T17:26:54.000000Z\",\"updated_at\":\"2025-07-06T17:26:54.000000Z\",\"phone\":null,\"address\":null,\"city\":null,\"postal_code\":null,\"blood_type_id\":null,\"date_of_birth\":null,\"gender\":null,\"is_eligible_donor\":true,\"role_id\":1},\"blood_stocks\":[]}}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer le stock d'une banque de sang",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-banks\/:id\/stock",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-banks\/:id\/stock",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "The ID of the blood bank."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 200,
+                            "body": "{\"blood_bank\":{\"id\":1,\"name\":\"Centre de Transfusion Sanguine de Paris\",\"description\":\"Centre principal de transfusion sanguine de la r\\u00e9gion parisienne\",\"phone\":\"01 44 49 30 00\",\"email\":\"contact@cts-paris.fr\",\"website\":\"https:\\\/\\\/www.cts-paris.fr\",\"address\":\"6 rue Alexandre Cabanel\",\"city\":\"Paris\",\"postal_code\":\"75015\",\"country\":\"France\",\"latitude\":\"48.85660000\",\"longitude\":\"2.35220000\",\"is_verified\":true,\"is_active\":true,\"partnership_level\":\"public\",\"admin_id\":1,\"created_at\":\"2025-07-06T17:33:10.000000Z\",\"updated_at\":\"2025-07-06T17:33:10.000000Z\",\"blood_stocks\":[]},\"stock\":[],\"total_stock\":0,\"has_low_stock\":false}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Rechercher des banques par proximit\u00e9",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-banks\/search\/nearby",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-banks\/search\/nearby"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"latitude\":-90,\"longitude\":-180,\"radius\":13}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "G\u00e9ocoder une adresse en coordonn\u00e9es",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/geolocation\/geocode",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/geolocation\/geocode"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"address\":\"cscmxmpgscqxv\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Obtenir les statistiques de g\u00e9olocalisation",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/geolocation\/statistics",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/geolocation\/statistics"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 500,
+                            "body": "{\n    \"message\": \"Server Error\"\n}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Rechercher des banques de sang par proximit\u00e9",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/geolocation\/nearby-banks",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/geolocation\/nearby-banks"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"latitude\":-90,\"longitude\":-180,\"radius_km\":2}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Rechercher des donneurs par proximit\u00e9",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/geolocation\/nearby-donors",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/geolocation\/nearby-donors"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"latitude\":-90,\"longitude\":-180,\"radius_km\":14}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Envoyer un message de contact",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/contact\/send",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/contact\/send"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"earlwkwip\",\"email\":\"nbednar@example.com\",\"subject\":\"ggtbvmsrqwyqkscbrrjhydv\",\"message\":\"tzjmbdrljgxpadohqwvmwjz\",\"phone\":\"evmcrsdonfryletltv\",\"contact_type\":\"partnership\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer tous les messages de contact (admin seulement)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/contacts",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/contacts"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Marquer un message comme trait\u00e9",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/contacts\/:id\/process",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/contacts\/:id\/process",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "dignissimos",
+                                    "description": "The ID of the contact."
+                                }
+                            ]
+                        },
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Marquer un message comme en cours de traitement",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/contacts\/:id\/progress",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/contacts\/:id\/progress",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "delectus",
+                                    "description": "The ID of the contact."
+                                }
+                            ]
+                        },
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "R\u00e9pondre \u00e0 un message de contact",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/contacts\/:id\/respond",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/contacts\/:id\/respond",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "rem",
+                                    "description": "The ID of the contact."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"response_message\":\"apxtwsohyxomtmvmkoaneck\",\"response_subject\":\"xgodygagbgrhmhqmowhrpb\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Obtenir les statistiques des contacts",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/contacts\/statistics",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/contacts\/statistics"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Cr\u00e9er un nouveau type de sang (Admin seulement)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-types",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-types"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"ev\",\"description\":\"Tempore sequi beatae maiores corporis eum dolores.\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Mettre \u00e0 jour un type de sang (Admin seulement)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-types\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-types\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "The ID of the blood type."
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"description\":\"Expedita eius perspiciatis dolorem recusandae.\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Supprimer un type de sang (Admin seulement)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-types\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-types\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "The ID of the blood type."
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Cr\u00e9er une nouvelle banque de sang (Admin seulement)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-banks",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-banks"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"rtka\",\"description\":\"Illum ullam explicabo facere eum ad laborum pariatur quam.\",\"phone\":\"lwywgz\",\"email\":\"becker.jose@example.net\",\"website\":\"https:\\\/\\\/johnson.com\\\/sunt-ad-est-facere-tempore.html\",\"address\":\"ut\",\"city\":\"w\",\"postal_code\":\"r\",\"country\":\"ajj\",\"latitude\":-90,\"longitude\":-180,\"partnership_level\":\"public\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Mettre \u00e0 jour une banque de sang",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-banks\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-banks\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "The ID of the blood bank."
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"vjeqmeo\",\"description\":\"Quis et quos id quas error.\",\"phone\":\"dzcfzsjochvbaml\",\"website\":\"http:\\\/\\\/www.dietrich.com\\\/reprehenderit-eum-saepe-consequatur-consequatur-illum-laudantium-distinctio-et\",\"address\":\"et\",\"city\":\"ahefcgacdq\",\"postal_code\":\"ehqoxzznih\",\"country\":\"ekxtdihmtmmqypctdhiauqlq\",\"latitude\":-90,\"longitude\":-180,\"partnership_level\":\"associative\",\"is_active\":false}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Supprimer une banque de sang (Admin seulement)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-banks\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-banks\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "The ID of the blood bank."
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Valider une banque de sang (Admin seulement)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-banks\/:id\/verify",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-banks\/:id\/verify",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "1",
+                                    "description": "The ID of the blood bank."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer tous les dons (avec filtres)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/donations",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/donations"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer un don sp\u00e9cifique",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/donations\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/donations\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "id",
+                                    "description": "The ID of the donation."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Cr\u00e9er un nouveau don",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/donations",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/donations"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"donor_id\":\"sit\",\"blood_bank_id\":\"libero\",\"blood_type_id\":\"error\",\"donation_date\":\"2046-03-10\",\"quantity_ml\":2,\"notes\":\"quia\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Mettre \u00e0 jour un don",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/donations\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/donations\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "velit",
+                                    "description": "The ID of the donation."
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"donation_date\":\"2025-07-06T18:32:50\",\"quantity_ml\":12,\"status\":\"completed\",\"notes\":\"est\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Supprimer un don",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/donations\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/donations\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "deserunt",
+                                    "description": "The ID of the donation."
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Marquer un don comme compl\u00e9t\u00e9",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/donations\/:id\/complete",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/donations\/:id\/complete",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "quo",
+                                    "description": "The ID of the donation."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Annuler un don",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/donations\/:id\/cancel",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/donations\/:id\/cancel",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "quam",
+                                    "description": "The ID of the donation."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer l'historique des dons d'un donneur",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/donations\/donor\/:donorId\/history",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/donations\/donor\/:donorId\/history",
+                            "variable": [
+                                {
+                                    "id": "donorId",
+                                    "key": "donorId",
+                                    "value": "accusamus",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer les statistiques des dons",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/donations\/statistics",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/donations\/statistics"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer le stock d'une banque de sang",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/stocks",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/stocks"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer un stock sp\u00e9cifique",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/stocks\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/stocks\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "quis",
+                                    "description": "The ID of the stock."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Cr\u00e9er un nouveau stock",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/stocks",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/stocks"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"blood_bank_id\":\"adipisci\",\"blood_type_id\":\"deserunt\",\"quantity_ml\":31,\"minimum_threshold\":40,\"maximum_capacity\":74}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Mettre \u00e0 jour le stock (ajustement manuel)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/stocks\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/stocks\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "consequatur",
+                                    "description": "The ID of the stock."
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"quantity_ml\":23,\"minimum_threshold\":72,\"maximum_capacity\":90,\"reason\":\"tempore\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Supprimer un stock",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/stocks\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/stocks\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "eos",
+                                    "description": "The ID of the stock."
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Ajuster le stock (ajout ou retrait)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/stocks\/:id\/adjust",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/stocks\/:id\/adjust",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "mollitia",
+                                    "description": "The ID of the stock."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"quantity_ml\":18,\"movement_type\":\"out\",\"reason\":\"voluptates\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer l'historique des mouvements de stock",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/stocks\/movements",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/stocks\/movements"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer les alertes de stock faible",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/stocks\/alerts\/low-stock",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/stocks\/alerts\/low-stock"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer les statistiques de stock",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/stocks\/statistics",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/stocks\/statistics"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer tous les patients (avec filtres)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/patients",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/patients"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer un patient sp\u00e9cifique",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/patients\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/patients\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "cumque",
+                                    "description": "The ID of the patient."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Cr\u00e9er un nouveau patient",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/patients",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/patients"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"lmgfznbfz\",\"date_of_birth\":\"2009-10-20\",\"gender\":\"female\",\"blood_type_id\":\"est\",\"doctor_name\":\"ynujjdzfvykon\",\"hospital_name\":\"hkxkbjsdcqewqispcnlmbf\",\"phone\":\"knxbvjfgvgfkdhoyry\",\"email\":\"giovanni.stehr@example.org\",\"urgency_level\":\"critical\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Mettre \u00e0 jour un patient",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/patients\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/patients\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "sint",
+                                    "description": "The ID of the patient."
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"yud\",\"date_of_birth\":\"2009-07-18\",\"gender\":\"male\",\"blood_type_id\":\"laboriosam\",\"doctor_name\":\"fqwni\",\"hospital_name\":\"qzjsruhxewpzvnfjdjbkalo\",\"phone\":\"vzm\",\"email\":\"qlesch@example.net\",\"urgency_level\":\"critical\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Supprimer un patient",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/patients\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/patients\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "nam",
+                                    "description": "The ID of the patient."
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer les statistiques des patients",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/patients\/statistics",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/patients\/statistics"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Rechercher des patients",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/patients\/search",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/patients\/search"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"query\":\"wxueursvecckmzdl\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer toutes les demandes de sang (avec filtres)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-requests",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-requests"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer une demande de sang sp\u00e9cifique",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-requests\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-requests\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "optio",
+                                    "description": "The ID of the blood request."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Cr\u00e9er une nouvelle demande de sang",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-requests",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-requests"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"patient_id\":\"rerum\",\"blood_type_id\":\"aut\",\"quantity_ml\":5,\"urgency_level\":\"urgent\",\"requested_date\":\"2056-10-08\",\"needed_by_date\":\"2058-03-25\",\"notes\":\"consectetur\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Mettre \u00e0 jour une demande de sang",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-requests\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-requests\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "vel",
+                                    "description": "The ID of the blood request."
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"quantity_ml\":5,\"urgency_level\":\"normal\",\"status\":\"cancelled\",\"requested_date\":\"2025-07-06T18:32:50\",\"needed_by_date\":\"2091-08-12\",\"notes\":\"quas\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Supprimer une demande de sang",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-requests\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-requests\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "velit",
+                                    "description": "The ID of the blood request."
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Rechercher des disponibilit\u00e9s pour une demande",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-requests\/:id\/availability",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-requests\/:id\/availability",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "quae",
+                                    "description": "The ID of the blood request."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Approuver une demande de sang",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-requests\/:id\/approve",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-requests\/:id\/approve",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "quisquam",
+                                    "description": "The ID of the blood request."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Annuler une demande de sang",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-requests\/:id\/cancel",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-requests\/:id\/cancel",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "mollitia",
+                                    "description": "The ID of the blood request."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Satisfaire une demande de sang",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-requests\/:id\/fulfill",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-requests\/:id\/fulfill",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "sunt",
+                                    "description": "The ID of the blood request."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"blood_bank_id\":\"dolores\",\"fulfillment_date\":\"2115-06-09\",\"notes\":\"distinctio\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer les statistiques des demandes",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/blood-requests\/statistics",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/blood-requests\/statistics"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer les notifications de l'utilisateur connect\u00e9",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/notifications",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/notifications"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Obtenir le nombre de notifications non lues",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/notifications\/unread-count",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/notifications\/unread-count"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Marquer une notification comme lue",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/notifications\/:id\/read",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/notifications\/:id\/read",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "omnis",
+                                    "description": "The ID of the notification."
+                                }
+                            ]
+                        },
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Marquer toutes les notifications comme lues",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/notifications\/mark-all-read",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/notifications\/mark-all-read"
+                        },
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Supprimer une notification",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/notifications\/:id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/notifications\/:id",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "dolorem",
+                                    "description": "The ID of the notification."
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "D\u00e9clarer une urgence",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/emergencies\/declare",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/emergencies\/declare"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"patient_id\":\"sit\",\"blood_type_id\":\"ea\",\"required_quantity_ml\":96,\"urgency_level\":\"low\",\"hospital_name\":\"yemyolclp\",\"hospital_address\":\"culpa\",\"latitude\":-90,\"longitude\":-179,\"contact_phone\":\"exyoqtrigj\",\"notes\":\"minima\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Rechercher des banques de sang disponibles pour une urgence",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/emergencies\/find-banks",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/emergencies\/find-banks"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"blood_type_id\":\"quos\",\"required_quantity_ml\":90,\"latitude\":-90,\"longitude\":-179,\"radius_km\":13}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Obtenir les urgences actives",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/emergencies\/active",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/emergencies\/active"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Mettre \u00e0 jour le statut d'une urgence",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/emergencies\/:id\/status",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/emergencies\/:id\/status",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "atque",
+                                    "description": "The ID of the emergency."
+                                }
+                            ]
+                        },
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"status\":\"fulfilled\",\"notes\":\"ut\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "R\u00e9cup\u00e9rer tous les partenariats",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/partnerships",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/partnerships"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Demander un partenariat",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/partnerships\/request",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/partnerships\/request"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"responding_bank_id\":\"odit\",\"partnership_type\":\"training\",\"description\":\"Vel nulla ut numquam qui.\",\"terms\":\"drvfj\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "R\u00e9pondre \u00e0 une demande de partenariat",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/partnerships\/:id\/respond",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/partnerships\/:id\/respond",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "maiores",
+                                    "description": "The ID of the partnership."
+                                }
+                            ]
+                        },
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"status\":\"accepted\",\"response_notes\":\"pvljaykctjz\"}"
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Terminer un partenariat",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/partnerships\/:id\/terminate",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/partnerships\/:id\/terminate",
+                            "variable": [
+                                {
+                                    "id": "id",
+                                    "key": "id",
+                                    "value": "numquam",
+                                    "description": "The ID of the partnership."
+                                }
+                            ]
+                        },
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Obtenir les statistiques des partenariats",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/partnerships\/statistics",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/partnerships\/statistics"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "GET api\/user",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/user",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/user"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "access-control-allow-origin",
+                                    "value": "*"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "Authorization",
+                "type": "string"
+            }
+        ]
+    }
+}

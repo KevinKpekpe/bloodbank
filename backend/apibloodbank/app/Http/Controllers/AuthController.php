@@ -9,11 +9,59 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 
+/**
+ * @group Authentification
+ *
+ * APIs pour la gestion de l'authentification des utilisateurs
+ */
 class AuthController extends Controller
 {
     /**
      * Inscription d'un nouvel utilisateur
+     *
+     * Permet à un utilisateur de s'inscrire sur la plateforme avec un rôle spécifique.
+     *
+     * @bodyParam name string required Le nom complet de l'utilisateur. Example: Jean Dupont
+     * @bodyParam email string required L'adresse email unique. Example: jean.dupont@example.com
+     * @bodyParam password string required Le mot de passe (minimum 8 caractères). Example: password123
+     * @bodyParam password_confirmation string required La confirmation du mot de passe. Example: password123
+     * @bodyParam phone string Le numéro de téléphone. Example: +33123456789
+     * @bodyParam address string L'adresse postale. Example: 123 Rue de la Paix
+     * @bodyParam city string La ville. Example: Paris
+     * @bodyParam postal_code string Le code postal. Example: 75001
+     * @bodyParam country string Le pays. Example: France
+     * @bodyParam latitude number La latitude (pour la géolocalisation). Example: 48.8566
+     * @bodyParam longitude number La longitude (pour la géolocalisation). Example: 2.3522
+     * @bodyParam blood_type_id integer L'ID du groupe sanguin. Example: 1
+     * @bodyParam role string required Le rôle de l'utilisateur (donor, doctor, blood_bank, admin). Example: donor
+     *
+     * @response 201 {
+     *   "success": true,
+     *   "message": "Utilisateur créé avec succès",
+     *   "user": {
+     *     "id": 1,
+     *     "name": "Jean Dupont",
+     *     "email": "jean.dupont@example.com",
+     *     "phone": "+33123456789",
+     *     "role": {
+     *       "id": 2,
+     *       "name": "donor"
+     *     },
+     *     "blood_type": {
+     *       "id": 1,
+     *       "name": "A+"
+     *     }
+     *   }
+     * }
+     *
+     * @response 422 {
+     *   "message": "Erreur de validation",
+     *   "errors": {
+     *     "email": ["L'adresse email est déjà utilisée."]
+     *   }
+     * }
      */
     public function register(Request $request)
     {
@@ -75,6 +123,29 @@ class AuthController extends Controller
 
     /**
      * Connexion utilisateur
+     *
+     * Authentifie un utilisateur et retourne un token d'accès.
+     *
+     * @bodyParam email string required L'adresse email. Example: jean.dupont@example.com
+     * @bodyParam password string required Le mot de passe. Example: password123
+     *
+     * @response 200 {
+     *   "success": true,
+     *   "message": "Connexion réussie",
+     *   "user": {
+     *     "id": 1,
+     *     "name": "Jean Dupont",
+     *     "email": "jean.dupont@example.com",
+     *     "role": {
+     *       "name": "donor"
+     *     }
+     *   },
+     *   "token": "1|abc123def456..."
+     * }
+     *
+     * @response 401 {
+     *   "message": "Identifiants invalides"
+     * }
      */
     public function login(Request $request)
     {
@@ -109,6 +180,15 @@ class AuthController extends Controller
 
     /**
      * Déconnexion utilisateur
+     *
+     * Invalide le token d'accès de l'utilisateur connecté.
+     *
+     * @authenticated
+     *
+     * @response 200 {
+     *   "success": true,
+     *   "message": "Déconnexion réussie"
+     * }
      */
     public function logout(Request $request)
     {
@@ -120,7 +200,27 @@ class AuthController extends Controller
     }
 
     /**
-     * Récupérer les informations de l'utilisateur connecté
+     * Profil utilisateur connecté
+     *
+     * Récupère les informations du profil de l'utilisateur connecté.
+     *
+     * @authenticated
+     *
+     * @response 200 {
+     *   "success": true,
+     *   "user": {
+     *     "id": 1,
+     *     "name": "Jean Dupont",
+     *     "email": "jean.dupont@example.com",
+     *     "phone": "+33123456789",
+     *     "role": {
+     *       "name": "donor"
+     *     },
+     *     "blood_type": {
+     *       "name": "A+"
+     *     }
+     *   }
+     * }
      */
     public function me(Request $request)
     {
@@ -131,6 +231,15 @@ class AuthController extends Controller
 
     /**
      * Rafraîchir le token
+     *
+     * Génère un nouveau token d'accès pour l'utilisateur connecté.
+     *
+     * @authenticated
+     *
+     * @response 200 {
+     *   "success": true,
+     *   "token": "2|xyz789abc123..."
+     * }
      */
     public function refresh(Request $request)
     {

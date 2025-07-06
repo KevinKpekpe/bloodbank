@@ -1,0 +1,3733 @@
+openapi: 3.0.3
+info:
+  title: 'API BloodBank - Documentation'
+  description: 'API complète pour la gestion des dons de sang, banques de sang, urgences et géolocalisation.'
+  version: 1.0.0
+servers:
+  -
+    url: 'http://localhost:8000'
+tags:
+  -
+    name: Authentification
+    description: "\nAPIs pour la gestion de l'authentification des utilisateurs"
+  -
+    name: Endpoints
+    description: ''
+components:
+  securitySchemes:
+    default:
+      type: http
+      scheme: bearer
+      description: "Vous pouvez obtenir votre clé d'authentification en vous connectant via l'endpoint /api/auth/login"
+security:
+  -
+    default: []
+paths:
+  /api/auth/register:
+    post:
+      summary: "Inscription d'un nouvel utilisateur"
+      operationId: inscriptionDunNouvelUtilisateur
+      description: "Permet à un utilisateur de s'inscrire sur la plateforme avec un rôle spécifique."
+      parameters: []
+      responses:
+        201:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  success: true
+                  message: 'Utilisateur créé avec succès'
+                  user:
+                    id: 1
+                    name: 'Jean Dupont'
+                    email: jean.dupont@example.com
+                    phone: '+33123456789'
+                    role:
+                      id: 2
+                      name: donor
+                    blood_type:
+                      id: 1
+                      name: A+
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'Utilisateur créé avec succès'
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: 'Jean Dupont'
+                      email:
+                        type: string
+                        example: jean.dupont@example.com
+                      phone:
+                        type: string
+                        example: '+33123456789'
+                      role:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 2
+                          name:
+                            type: string
+                            example: donor
+                      blood_type:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 1
+                          name:
+                            type: string
+                            example: A+
+        422:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Erreur de validation'
+                  errors:
+                    email:
+                      - "L'adresse email est déjà utilisée."
+                properties:
+                  message:
+                    type: string
+                    example: 'Erreur de validation'
+                  errors:
+                    type: object
+                    properties:
+                      email:
+                        type: array
+                        example:
+                          - "L'adresse email est déjà utilisée."
+                        items:
+                          type: string
+      tags:
+        - Authentification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: "Le nom complet de l'utilisateur."
+                  example: 'Jean Dupont'
+                  nullable: false
+                email:
+                  type: string
+                  description: "L'adresse email unique."
+                  example: jean.dupont@example.com
+                  nullable: false
+                password:
+                  type: string
+                  description: 'Le mot de passe (minimum 8 caractères).'
+                  example: password123
+                  nullable: false
+                phone:
+                  type: string
+                  description: 'Le numéro de téléphone.'
+                  example: '+33123456789'
+                  nullable: true
+                address:
+                  type: string
+                  description: "L'adresse postale."
+                  example: '123 Rue de la Paix'
+                  nullable: true
+                city:
+                  type: string
+                  description: 'La ville.'
+                  example: Paris
+                  nullable: true
+                postal_code:
+                  type: string
+                  description: 'Le code postal.'
+                  example: '75001'
+                  nullable: true
+                blood_type_id:
+                  type: integer
+                  description: "L'ID du groupe sanguin."
+                  example: 1
+                  nullable: true
+                date_of_birth:
+                  type: string
+                  description: 'Must be a valid date.'
+                  example: '2025-07-06T18:32:50'
+                  nullable: true
+                gender:
+                  type: string
+                  description: ''
+                  example: male
+                  nullable: true
+                  enum:
+                    - male
+                    - female
+                    - other
+                role:
+                  type: string
+                  description: "Le rôle de l'utilisateur (donor, doctor, blood_bank, admin)."
+                  example: donor
+                  nullable: false
+                password_confirmation:
+                  type: string
+                  description: 'La confirmation du mot de passe.'
+                  example: password123
+                  nullable: false
+                country:
+                  type: string
+                  description: 'Le pays.'
+                  example: France
+                  nullable: false
+                latitude:
+                  type: number
+                  description: 'La latitude (pour la géolocalisation).'
+                  example: 48.8566
+                  nullable: false
+                longitude:
+                  type: number
+                  description: 'La longitude (pour la géolocalisation).'
+                  example: 2.3522
+                  nullable: false
+              required:
+                - name
+                - email
+                - password
+                - role
+                - password_confirmation
+      security: []
+  /api/auth/login:
+    post:
+      summary: 'Connexion utilisateur'
+      operationId: connexionUtilisateur
+      description: "Authentifie un utilisateur et retourne un token d'accès."
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  success: true
+                  message: 'Connexion réussie'
+                  user:
+                    id: 1
+                    name: 'Jean Dupont'
+                    email: jean.dupont@example.com
+                    role:
+                      name: donor
+                  token: 1|abc123def456...
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'Connexion réussie'
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: 'Jean Dupont'
+                      email:
+                        type: string
+                        example: jean.dupont@example.com
+                      role:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            example: donor
+                  token:
+                    type: string
+                    example: 1|abc123def456...
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Identifiants invalides'
+                properties:
+                  message:
+                    type: string
+                    example: 'Identifiants invalides'
+      tags:
+        - Authentification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: "L'adresse email."
+                  example: jean.dupont@example.com
+                  nullable: false
+                password:
+                  type: string
+                  description: 'Le mot de passe.'
+                  example: password123
+                  nullable: false
+              required:
+                - email
+                - password
+      security: []
+  /api/auth/logout:
+    post:
+      summary: 'Déconnexion utilisateur'
+      operationId: dconnexionUtilisateur
+      description: "Invalide le token d'accès de l'utilisateur connecté."
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  success: true
+                  message: 'Déconnexion réussie'
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: 'Déconnexion réussie'
+      tags:
+        - Authentification
+  /api/auth/me:
+    get:
+      summary: 'Profil utilisateur connecté'
+      operationId: profilUtilisateurConnect
+      description: "Récupère les informations du profil de l'utilisateur connecté."
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  success: true
+                  user:
+                    id: 1
+                    name: 'Jean Dupont'
+                    email: jean.dupont@example.com
+                    phone: '+33123456789'
+                    role:
+                      name: donor
+                    blood_type:
+                      name: A+
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: 'Jean Dupont'
+                      email:
+                        type: string
+                        example: jean.dupont@example.com
+                      phone:
+                        type: string
+                        example: '+33123456789'
+                      role:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            example: donor
+                      blood_type:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            example: A+
+      tags:
+        - Authentification
+  /api/auth/refresh:
+    post:
+      summary: 'Rafraîchir le token'
+      operationId: rafrachirLeToken
+      description: "Génère un nouveau token d'accès pour l'utilisateur connecté."
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  success: true
+                  token: 2|xyz789abc123...
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  token:
+                    type: string
+                    example: 2|xyz789abc123...
+      tags:
+        - Authentification
+  /api/blood-types:
+    get:
+      summary: 'Récupérer tous les types de sang'
+      operationId: rcuprerTousLesTypesDeSang
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  blood_types:
+                    -
+                      id: 1
+                      name: A+
+                      description: 'Groupe sanguin A positif'
+                      created_at: '2025-07-06T17:26:53.000000Z'
+                      updated_at: '2025-07-06T17:26:53.000000Z'
+                    -
+                      id: 2
+                      name: A-
+                      description: 'Groupe sanguin A négatif'
+                      created_at: '2025-07-06T17:26:53.000000Z'
+                      updated_at: '2025-07-06T17:26:53.000000Z'
+                    -
+                      id: 5
+                      name: AB+
+                      description: 'Groupe sanguin AB positif'
+                      created_at: '2025-07-06T17:26:53.000000Z'
+                      updated_at: '2025-07-06T17:26:53.000000Z'
+                    -
+                      id: 6
+                      name: AB-
+                      description: 'Groupe sanguin AB négatif'
+                      created_at: '2025-07-06T17:26:53.000000Z'
+                      updated_at: '2025-07-06T17:26:53.000000Z'
+                    -
+                      id: 3
+                      name: B+
+                      description: 'Groupe sanguin B positif'
+                      created_at: '2025-07-06T17:26:53.000000Z'
+                      updated_at: '2025-07-06T17:26:53.000000Z'
+                    -
+                      id: 4
+                      name: B-
+                      description: 'Groupe sanguin B négatif'
+                      created_at: '2025-07-06T17:26:53.000000Z'
+                      updated_at: '2025-07-06T17:26:53.000000Z'
+                    -
+                      id: 7
+                      name: O+
+                      description: 'Groupe sanguin O positif'
+                      created_at: '2025-07-06T17:26:53.000000Z'
+                      updated_at: '2025-07-06T17:26:53.000000Z'
+                    -
+                      id: 8
+                      name: O-
+                      description: 'Groupe sanguin O négatif'
+                      created_at: '2025-07-06T17:26:53.000000Z'
+                      updated_at: '2025-07-06T17:26:53.000000Z'
+                properties:
+                  blood_types:
+                    type: array
+                    example:
+                      -
+                        id: 1
+                        name: A+
+                        description: 'Groupe sanguin A positif'
+                        created_at: '2025-07-06T17:26:53.000000Z'
+                        updated_at: '2025-07-06T17:26:53.000000Z'
+                      -
+                        id: 2
+                        name: A-
+                        description: 'Groupe sanguin A négatif'
+                        created_at: '2025-07-06T17:26:53.000000Z'
+                        updated_at: '2025-07-06T17:26:53.000000Z'
+                      -
+                        id: 5
+                        name: AB+
+                        description: 'Groupe sanguin AB positif'
+                        created_at: '2025-07-06T17:26:53.000000Z'
+                        updated_at: '2025-07-06T17:26:53.000000Z'
+                      -
+                        id: 6
+                        name: AB-
+                        description: 'Groupe sanguin AB négatif'
+                        created_at: '2025-07-06T17:26:53.000000Z'
+                        updated_at: '2025-07-06T17:26:53.000000Z'
+                      -
+                        id: 3
+                        name: B+
+                        description: 'Groupe sanguin B positif'
+                        created_at: '2025-07-06T17:26:53.000000Z'
+                        updated_at: '2025-07-06T17:26:53.000000Z'
+                      -
+                        id: 4
+                        name: B-
+                        description: 'Groupe sanguin B négatif'
+                        created_at: '2025-07-06T17:26:53.000000Z'
+                        updated_at: '2025-07-06T17:26:53.000000Z'
+                      -
+                        id: 7
+                        name: O+
+                        description: 'Groupe sanguin O positif'
+                        created_at: '2025-07-06T17:26:53.000000Z'
+                        updated_at: '2025-07-06T17:26:53.000000Z'
+                      -
+                        id: 8
+                        name: O-
+                        description: 'Groupe sanguin O négatif'
+                        created_at: '2025-07-06T17:26:53.000000Z'
+                        updated_at: '2025-07-06T17:26:53.000000Z'
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: A+
+                        description:
+                          type: string
+                          example: 'Groupe sanguin A positif'
+                        created_at:
+                          type: string
+                          example: '2025-07-06T17:26:53.000000Z'
+                        updated_at:
+                          type: string
+                          example: '2025-07-06T17:26:53.000000Z'
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Créer un nouveau type de sang (Admin seulement)'
+      operationId: crerUnNouveauTypeDeSangAdminSeulement
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 10 characters.'
+                  example: ev
+                  nullable: false
+                description:
+                  type: string
+                  description: ''
+                  example: 'Tempore sequi beatae maiores corporis eum dolores.'
+                  nullable: true
+              required:
+                - name
+      security: []
+  '/api/blood-types/{id}':
+    get:
+      summary: 'Récupérer un type de sang spécifique'
+      operationId: rcuprerUnTypeDeSangSpcifique
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  blood_type:
+                    id: 1
+                    name: A+
+                    description: 'Groupe sanguin A positif'
+                    created_at: '2025-07-06T17:26:53.000000Z'
+                    updated_at: '2025-07-06T17:26:53.000000Z'
+                properties:
+                  blood_type:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: A+
+                      description:
+                        type: string
+                        example: 'Groupe sanguin A positif'
+                      created_at:
+                        type: string
+                        example: '2025-07-06T17:26:53.000000Z'
+                      updated_at:
+                        type: string
+                        example: '2025-07-06T17:26:53.000000Z'
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: 'Mettre à jour un type de sang (Admin seulement)'
+      operationId: mettreJourUnTypeDeSangAdminSeulement
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: ''
+                  example: null
+                  nullable: false
+                description:
+                  type: string
+                  description: ''
+                  example: 'Expedita eius perspiciatis dolorem recusandae.'
+                  nullable: true
+      security: []
+    delete:
+      summary: 'Supprimer un type de sang (Admin seulement)'
+      operationId: supprimerUnTypeDeSangAdminSeulement
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the blood type.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/blood-types/{id}/compatible':
+    get:
+      summary: 'Récupérer les types compatibles pour un type donné'
+      operationId: rcuprerLesTypesCompatiblesPourUnTypeDonn
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  blood_type:
+                    id: 1
+                    name: A+
+                    description: 'Groupe sanguin A positif'
+                    created_at: '2025-07-06T17:26:53.000000Z'
+                    updated_at: '2025-07-06T17:26:53.000000Z'
+                  compatible_types:
+                    -
+                      id: 1
+                      name: A+
+                      description: 'Groupe sanguin A positif'
+                      created_at: '2025-07-06T17:26:53.000000Z'
+                      updated_at: '2025-07-06T17:26:53.000000Z'
+                    -
+                      id: 5
+                      name: AB+
+                      description: 'Groupe sanguin AB positif'
+                      created_at: '2025-07-06T17:26:53.000000Z'
+                      updated_at: '2025-07-06T17:26:53.000000Z'
+                properties:
+                  blood_type:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: A+
+                      description:
+                        type: string
+                        example: 'Groupe sanguin A positif'
+                      created_at:
+                        type: string
+                        example: '2025-07-06T17:26:53.000000Z'
+                      updated_at:
+                        type: string
+                        example: '2025-07-06T17:26:53.000000Z'
+                  compatible_types:
+                    type: array
+                    example:
+                      -
+                        id: 1
+                        name: A+
+                        description: 'Groupe sanguin A positif'
+                        created_at: '2025-07-06T17:26:53.000000Z'
+                        updated_at: '2025-07-06T17:26:53.000000Z'
+                      -
+                        id: 5
+                        name: AB+
+                        description: 'Groupe sanguin AB positif'
+                        created_at: '2025-07-06T17:26:53.000000Z'
+                        updated_at: '2025-07-06T17:26:53.000000Z'
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: A+
+                        description:
+                          type: string
+                          example: 'Groupe sanguin A positif'
+                        created_at:
+                          type: string
+                          example: '2025-07-06T17:26:53.000000Z'
+                        updated_at:
+                          type: string
+                          example: '2025-07-06T17:26:53.000000Z'
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the blood type.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/blood-banks:
+    get:
+      summary: 'Récupérer toutes les banques de sang actives'
+      operationId: rcuprerToutesLesBanquesDeSangActives
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  blood_banks:
+                    current_page: 1
+                    data:
+                      -
+                        id: 1
+                        name: 'Centre de Transfusion Sanguine de Paris'
+                        description: 'Centre principal de transfusion sanguine de la région parisienne'
+                        phone: '01 44 49 30 00'
+                        email: contact@cts-paris.fr
+                        website: 'https://www.cts-paris.fr'
+                        address: '6 rue Alexandre Cabanel'
+                        city: Paris
+                        postal_code: '75015'
+                        country: France
+                        latitude: '48.85660000'
+                        longitude: '2.35220000'
+                        is_verified: true
+                        is_active: true
+                        partnership_level: public
+                        admin_id: 1
+                        created_at: '2025-07-06T17:33:10.000000Z'
+                        updated_at: '2025-07-06T17:33:10.000000Z'
+                        admin:
+                          id: 1
+                          name: Administrateur
+                          email: admin@bloodbank.com
+                          email_verified_at: '2025-07-06T17:26:54.000000Z'
+                          created_at: '2025-07-06T17:26:54.000000Z'
+                          updated_at: '2025-07-06T17:26:54.000000Z'
+                          phone: null
+                          address: null
+                          city: null
+                          postal_code: null
+                          blood_type_id: null
+                          date_of_birth: null
+                          gender: null
+                          is_eligible_donor: true
+                          role_id: 1
+                        blood_stocks: []
+                      -
+                        id: 2
+                        name: 'Établissement Français du Sang - Lyon'
+                        description: 'Centre de collecte et de distribution de sang à Lyon'
+                        phone: '04 72 68 70 00'
+                        email: contact@efs-lyon.fr
+                        website: 'https://www.efs.sante.fr'
+                        address: '1 rue du Professeur Calmette'
+                        city: Lyon
+                        postal_code: '69003'
+                        country: France
+                        latitude: '45.75780000'
+                        longitude: '4.83200000'
+                        is_verified: true
+                        is_active: true
+                        partnership_level: public
+                        admin_id: 1
+                        created_at: '2025-07-06T17:33:10.000000Z'
+                        updated_at: '2025-07-06T17:33:10.000000Z'
+                        admin:
+                          id: 1
+                          name: Administrateur
+                          email: admin@bloodbank.com
+                          email_verified_at: '2025-07-06T17:26:54.000000Z'
+                          created_at: '2025-07-06T17:26:54.000000Z'
+                          updated_at: '2025-07-06T17:26:54.000000Z'
+                          phone: null
+                          address: null
+                          city: null
+                          postal_code: null
+                          blood_type_id: null
+                          date_of_birth: null
+                          gender: null
+                          is_eligible_donor: true
+                          role_id: 1
+                        blood_stocks: []
+                      -
+                        id: 3
+                        name: 'Centre Hospitalier Universitaire de Marseille'
+                        description: 'Banque de sang du CHU de Marseille'
+                        phone: '04 91 38 00 00'
+                        email: banque.sang@chu-marseille.fr
+                        website: 'https://www.chu-marseille.fr'
+                        address: '264 rue Saint-Pierre'
+                        city: Marseille
+                        postal_code: '13005'
+                        country: France
+                        latitude: '43.29650000'
+                        longitude: '5.36980000'
+                        is_verified: true
+                        is_active: true
+                        partnership_level: public
+                        admin_id: 1
+                        created_at: '2025-07-06T17:33:10.000000Z'
+                        updated_at: '2025-07-06T17:33:10.000000Z'
+                        admin:
+                          id: 1
+                          name: Administrateur
+                          email: admin@bloodbank.com
+                          email_verified_at: '2025-07-06T17:26:54.000000Z'
+                          created_at: '2025-07-06T17:26:54.000000Z'
+                          updated_at: '2025-07-06T17:26:54.000000Z'
+                          phone: null
+                          address: null
+                          city: null
+                          postal_code: null
+                          blood_type_id: null
+                          date_of_birth: null
+                          gender: null
+                          is_eligible_donor: true
+                          role_id: 1
+                        blood_stocks: []
+                      -
+                        id: 4
+                        name: 'Clinique Privée du Sang - Toulouse'
+                        description: 'Clinique privée spécialisée dans la transfusion sanguine'
+                        phone: '05 61 32 25 00'
+                        email: info@clinique-sang-toulouse.fr
+                        website: 'https://www.clinique-sang-toulouse.fr'
+                        address: '15 avenue des Minimes'
+                        city: Toulouse
+                        postal_code: '31200'
+                        country: France
+                        latitude: '43.60470000'
+                        longitude: '1.44420000'
+                        is_verified: true
+                        is_active: true
+                        partnership_level: private
+                        admin_id: 1
+                        created_at: '2025-07-06T17:33:10.000000Z'
+                        updated_at: '2025-07-06T17:33:10.000000Z'
+                        admin:
+                          id: 1
+                          name: Administrateur
+                          email: admin@bloodbank.com
+                          email_verified_at: '2025-07-06T17:26:54.000000Z'
+                          created_at: '2025-07-06T17:26:54.000000Z'
+                          updated_at: '2025-07-06T17:26:54.000000Z'
+                          phone: null
+                          address: null
+                          city: null
+                          postal_code: null
+                          blood_type_id: null
+                          date_of_birth: null
+                          gender: null
+                          is_eligible_donor: true
+                          role_id: 1
+                        blood_stocks: []
+                      -
+                        id: 5
+                        name: 'Association Donneurs de Sang Bénévoles - Nantes'
+                        description: 'Association de donneurs bénévoles de la région nantaise'
+                        phone: '02 40 20 50 00'
+                        email: contact@donneurs-nantes.fr
+                        website: 'https://www.donneurs-nantes.fr'
+                        address: '8 quai Moncousu'
+                        city: Nantes
+                        postal_code: '44000'
+                        country: France
+                        latitude: '47.21840000'
+                        longitude: '-1.55360000'
+                        is_verified: true
+                        is_active: true
+                        partnership_level: associative
+                        admin_id: 1
+                        created_at: '2025-07-06T17:33:10.000000Z'
+                        updated_at: '2025-07-06T17:33:10.000000Z'
+                        admin:
+                          id: 1
+                          name: Administrateur
+                          email: admin@bloodbank.com
+                          email_verified_at: '2025-07-06T17:26:54.000000Z'
+                          created_at: '2025-07-06T17:26:54.000000Z'
+                          updated_at: '2025-07-06T17:26:54.000000Z'
+                          phone: null
+                          address: null
+                          city: null
+                          postal_code: null
+                          blood_type_id: null
+                          date_of_birth: null
+                          gender: null
+                          is_eligible_donor: true
+                          role_id: 1
+                        blood_stocks: []
+                    first_page_url: 'http://localhost:8000/api/blood-banks?page=1'
+                    from: 1
+                    last_page: 1
+                    last_page_url: 'http://localhost:8000/api/blood-banks?page=1'
+                    links:
+                      -
+                        url: null
+                        label: '&laquo; Previous'
+                        active: false
+                      -
+                        url: 'http://localhost:8000/api/blood-banks?page=1'
+                        label: '1'
+                        active: true
+                      -
+                        url: null
+                        label: 'Next &raquo;'
+                        active: false
+                    next_page_url: null
+                    path: 'http://localhost:8000/api/blood-banks'
+                    per_page: 15
+                    prev_page_url: null
+                    to: 5
+                    total: 5
+                properties:
+                  blood_banks:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      data:
+                        type: array
+                        example:
+                          -
+                            id: 1
+                            name: 'Centre de Transfusion Sanguine de Paris'
+                            description: 'Centre principal de transfusion sanguine de la région parisienne'
+                            phone: '01 44 49 30 00'
+                            email: contact@cts-paris.fr
+                            website: 'https://www.cts-paris.fr'
+                            address: '6 rue Alexandre Cabanel'
+                            city: Paris
+                            postal_code: '75015'
+                            country: France
+                            latitude: '48.85660000'
+                            longitude: '2.35220000'
+                            is_verified: true
+                            is_active: true
+                            partnership_level: public
+                            admin_id: 1
+                            created_at: '2025-07-06T17:33:10.000000Z'
+                            updated_at: '2025-07-06T17:33:10.000000Z'
+                            admin:
+                              id: 1
+                              name: Administrateur
+                              email: admin@bloodbank.com
+                              email_verified_at: '2025-07-06T17:26:54.000000Z'
+                              created_at: '2025-07-06T17:26:54.000000Z'
+                              updated_at: '2025-07-06T17:26:54.000000Z'
+                              phone: null
+                              address: null
+                              city: null
+                              postal_code: null
+                              blood_type_id: null
+                              date_of_birth: null
+                              gender: null
+                              is_eligible_donor: true
+                              role_id: 1
+                            blood_stocks: []
+                          -
+                            id: 2
+                            name: 'Établissement Français du Sang - Lyon'
+                            description: 'Centre de collecte et de distribution de sang à Lyon'
+                            phone: '04 72 68 70 00'
+                            email: contact@efs-lyon.fr
+                            website: 'https://www.efs.sante.fr'
+                            address: '1 rue du Professeur Calmette'
+                            city: Lyon
+                            postal_code: '69003'
+                            country: France
+                            latitude: '45.75780000'
+                            longitude: '4.83200000'
+                            is_verified: true
+                            is_active: true
+                            partnership_level: public
+                            admin_id: 1
+                            created_at: '2025-07-06T17:33:10.000000Z'
+                            updated_at: '2025-07-06T17:33:10.000000Z'
+                            admin:
+                              id: 1
+                              name: Administrateur
+                              email: admin@bloodbank.com
+                              email_verified_at: '2025-07-06T17:26:54.000000Z'
+                              created_at: '2025-07-06T17:26:54.000000Z'
+                              updated_at: '2025-07-06T17:26:54.000000Z'
+                              phone: null
+                              address: null
+                              city: null
+                              postal_code: null
+                              blood_type_id: null
+                              date_of_birth: null
+                              gender: null
+                              is_eligible_donor: true
+                              role_id: 1
+                            blood_stocks: []
+                          -
+                            id: 3
+                            name: 'Centre Hospitalier Universitaire de Marseille'
+                            description: 'Banque de sang du CHU de Marseille'
+                            phone: '04 91 38 00 00'
+                            email: banque.sang@chu-marseille.fr
+                            website: 'https://www.chu-marseille.fr'
+                            address: '264 rue Saint-Pierre'
+                            city: Marseille
+                            postal_code: '13005'
+                            country: France
+                            latitude: '43.29650000'
+                            longitude: '5.36980000'
+                            is_verified: true
+                            is_active: true
+                            partnership_level: public
+                            admin_id: 1
+                            created_at: '2025-07-06T17:33:10.000000Z'
+                            updated_at: '2025-07-06T17:33:10.000000Z'
+                            admin:
+                              id: 1
+                              name: Administrateur
+                              email: admin@bloodbank.com
+                              email_verified_at: '2025-07-06T17:26:54.000000Z'
+                              created_at: '2025-07-06T17:26:54.000000Z'
+                              updated_at: '2025-07-06T17:26:54.000000Z'
+                              phone: null
+                              address: null
+                              city: null
+                              postal_code: null
+                              blood_type_id: null
+                              date_of_birth: null
+                              gender: null
+                              is_eligible_donor: true
+                              role_id: 1
+                            blood_stocks: []
+                          -
+                            id: 4
+                            name: 'Clinique Privée du Sang - Toulouse'
+                            description: 'Clinique privée spécialisée dans la transfusion sanguine'
+                            phone: '05 61 32 25 00'
+                            email: info@clinique-sang-toulouse.fr
+                            website: 'https://www.clinique-sang-toulouse.fr'
+                            address: '15 avenue des Minimes'
+                            city: Toulouse
+                            postal_code: '31200'
+                            country: France
+                            latitude: '43.60470000'
+                            longitude: '1.44420000'
+                            is_verified: true
+                            is_active: true
+                            partnership_level: private
+                            admin_id: 1
+                            created_at: '2025-07-06T17:33:10.000000Z'
+                            updated_at: '2025-07-06T17:33:10.000000Z'
+                            admin:
+                              id: 1
+                              name: Administrateur
+                              email: admin@bloodbank.com
+                              email_verified_at: '2025-07-06T17:26:54.000000Z'
+                              created_at: '2025-07-06T17:26:54.000000Z'
+                              updated_at: '2025-07-06T17:26:54.000000Z'
+                              phone: null
+                              address: null
+                              city: null
+                              postal_code: null
+                              blood_type_id: null
+                              date_of_birth: null
+                              gender: null
+                              is_eligible_donor: true
+                              role_id: 1
+                            blood_stocks: []
+                          -
+                            id: 5
+                            name: 'Association Donneurs de Sang Bénévoles - Nantes'
+                            description: 'Association de donneurs bénévoles de la région nantaise'
+                            phone: '02 40 20 50 00'
+                            email: contact@donneurs-nantes.fr
+                            website: 'https://www.donneurs-nantes.fr'
+                            address: '8 quai Moncousu'
+                            city: Nantes
+                            postal_code: '44000'
+                            country: France
+                            latitude: '47.21840000'
+                            longitude: '-1.55360000'
+                            is_verified: true
+                            is_active: true
+                            partnership_level: associative
+                            admin_id: 1
+                            created_at: '2025-07-06T17:33:10.000000Z'
+                            updated_at: '2025-07-06T17:33:10.000000Z'
+                            admin:
+                              id: 1
+                              name: Administrateur
+                              email: admin@bloodbank.com
+                              email_verified_at: '2025-07-06T17:26:54.000000Z'
+                              created_at: '2025-07-06T17:26:54.000000Z'
+                              updated_at: '2025-07-06T17:26:54.000000Z'
+                              phone: null
+                              address: null
+                              city: null
+                              postal_code: null
+                              blood_type_id: null
+                              date_of_birth: null
+                              gender: null
+                              is_eligible_donor: true
+                              role_id: 1
+                            blood_stocks: []
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              example: 1
+                            name:
+                              type: string
+                              example: 'Centre de Transfusion Sanguine de Paris'
+                            description:
+                              type: string
+                              example: 'Centre principal de transfusion sanguine de la région parisienne'
+                            phone:
+                              type: string
+                              example: '01 44 49 30 00'
+                            email:
+                              type: string
+                              example: contact@cts-paris.fr
+                            website:
+                              type: string
+                              example: 'https://www.cts-paris.fr'
+                            address:
+                              type: string
+                              example: '6 rue Alexandre Cabanel'
+                            city:
+                              type: string
+                              example: Paris
+                            postal_code:
+                              type: string
+                              example: '75015'
+                            country:
+                              type: string
+                              example: France
+                            latitude:
+                              type: string
+                              example: '48.85660000'
+                            longitude:
+                              type: string
+                              example: '2.35220000'
+                            is_verified:
+                              type: boolean
+                              example: true
+                            is_active:
+                              type: boolean
+                              example: true
+                            partnership_level:
+                              type: string
+                              example: public
+                            admin_id:
+                              type: integer
+                              example: 1
+                            created_at:
+                              type: string
+                              example: '2025-07-06T17:33:10.000000Z'
+                            updated_at:
+                              type: string
+                              example: '2025-07-06T17:33:10.000000Z'
+                            admin:
+                              type: object
+                              properties:
+                                id:
+                                  type: integer
+                                  example: 1
+                                name:
+                                  type: string
+                                  example: Administrateur
+                                email:
+                                  type: string
+                                  example: admin@bloodbank.com
+                                email_verified_at:
+                                  type: string
+                                  example: '2025-07-06T17:26:54.000000Z'
+                                created_at:
+                                  type: string
+                                  example: '2025-07-06T17:26:54.000000Z'
+                                updated_at:
+                                  type: string
+                                  example: '2025-07-06T17:26:54.000000Z'
+                                phone:
+                                  type: string
+                                  example: null
+                                address:
+                                  type: string
+                                  example: null
+                                city:
+                                  type: string
+                                  example: null
+                                postal_code:
+                                  type: string
+                                  example: null
+                                blood_type_id:
+                                  type: string
+                                  example: null
+                                date_of_birth:
+                                  type: string
+                                  example: null
+                                gender:
+                                  type: string
+                                  example: null
+                                is_eligible_donor:
+                                  type: boolean
+                                  example: true
+                                role_id:
+                                  type: integer
+                                  example: 1
+                            blood_stocks:
+                              type: array
+                              example: []
+                      first_page_url:
+                        type: string
+                        example: 'http://localhost:8000/api/blood-banks?page=1'
+                      from:
+                        type: integer
+                        example: 1
+                      last_page:
+                        type: integer
+                        example: 1
+                      last_page_url:
+                        type: string
+                        example: 'http://localhost:8000/api/blood-banks?page=1'
+                      links:
+                        type: array
+                        example:
+                          -
+                            url: null
+                            label: '&laquo; Previous'
+                            active: false
+                          -
+                            url: 'http://localhost:8000/api/blood-banks?page=1'
+                            label: '1'
+                            active: true
+                          -
+                            url: null
+                            label: 'Next &raquo;'
+                            active: false
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type: string
+                              example: null
+                            label:
+                              type: string
+                              example: '&laquo; Previous'
+                            active:
+                              type: boolean
+                              example: false
+                      next_page_url:
+                        type: string
+                        example: null
+                      path:
+                        type: string
+                        example: 'http://localhost:8000/api/blood-banks'
+                      per_page:
+                        type: integer
+                        example: 15
+                      prev_page_url:
+                        type: string
+                        example: null
+                      to:
+                        type: integer
+                        example: 5
+                      total:
+                        type: integer
+                        example: 5
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Créer une nouvelle banque de sang (Admin seulement)'
+      operationId: crerUneNouvelleBanqueDeSangAdminSeulement
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: rtka
+                  nullable: false
+                description:
+                  type: string
+                  description: ''
+                  example: 'Illum ullam explicabo facere eum ad laborum pariatur quam.'
+                  nullable: true
+                phone:
+                  type: string
+                  description: 'Must not be greater than 20 characters.'
+                  example: lwywgz
+                  nullable: false
+                email:
+                  type: string
+                  description: 'Must be a valid email address.'
+                  example: becker.jose@example.net
+                  nullable: false
+                website:
+                  type: string
+                  description: 'Must be a valid URL.'
+                  example: 'https://johnson.com/sunt-ad-est-facere-tempore.html'
+                  nullable: true
+                address:
+                  type: string
+                  description: ''
+                  example: ut
+                  nullable: false
+                city:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: w
+                  nullable: false
+                postal_code:
+                  type: string
+                  description: 'Must not be greater than 10 characters.'
+                  example: r
+                  nullable: false
+                country:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: ajj
+                  nullable: true
+                latitude:
+                  type: number
+                  description: 'Must be between -90 and 90.'
+                  example: -90
+                  nullable: true
+                longitude:
+                  type: number
+                  description: 'Must be between -180 and 180.'
+                  example: -180
+                  nullable: true
+                partnership_level:
+                  type: string
+                  description: ''
+                  example: public
+                  nullable: false
+                  enum:
+                    - public
+                    - private
+                    - associative
+                admin_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the users table.'
+                  example: null
+                  nullable: true
+              required:
+                - name
+                - phone
+                - email
+                - address
+                - city
+                - postal_code
+                - partnership_level
+      security: []
+  '/api/blood-banks/{id}':
+    get:
+      summary: 'Récupérer une banque de sang spécifique'
+      operationId: rcuprerUneBanqueDeSangSpcifique
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  blood_bank:
+                    id: 1
+                    name: 'Centre de Transfusion Sanguine de Paris'
+                    description: 'Centre principal de transfusion sanguine de la région parisienne'
+                    phone: '01 44 49 30 00'
+                    email: contact@cts-paris.fr
+                    website: 'https://www.cts-paris.fr'
+                    address: '6 rue Alexandre Cabanel'
+                    city: Paris
+                    postal_code: '75015'
+                    country: France
+                    latitude: '48.85660000'
+                    longitude: '2.35220000'
+                    is_verified: true
+                    is_active: true
+                    partnership_level: public
+                    admin_id: 1
+                    created_at: '2025-07-06T17:33:10.000000Z'
+                    updated_at: '2025-07-06T17:33:10.000000Z'
+                    admin:
+                      id: 1
+                      name: Administrateur
+                      email: admin@bloodbank.com
+                      email_verified_at: '2025-07-06T17:26:54.000000Z'
+                      created_at: '2025-07-06T17:26:54.000000Z'
+                      updated_at: '2025-07-06T17:26:54.000000Z'
+                      phone: null
+                      address: null
+                      city: null
+                      postal_code: null
+                      blood_type_id: null
+                      date_of_birth: null
+                      gender: null
+                      is_eligible_donor: true
+                      role_id: 1
+                    blood_stocks: []
+                properties:
+                  blood_bank:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: 'Centre de Transfusion Sanguine de Paris'
+                      description:
+                        type: string
+                        example: 'Centre principal de transfusion sanguine de la région parisienne'
+                      phone:
+                        type: string
+                        example: '01 44 49 30 00'
+                      email:
+                        type: string
+                        example: contact@cts-paris.fr
+                      website:
+                        type: string
+                        example: 'https://www.cts-paris.fr'
+                      address:
+                        type: string
+                        example: '6 rue Alexandre Cabanel'
+                      city:
+                        type: string
+                        example: Paris
+                      postal_code:
+                        type: string
+                        example: '75015'
+                      country:
+                        type: string
+                        example: France
+                      latitude:
+                        type: string
+                        example: '48.85660000'
+                      longitude:
+                        type: string
+                        example: '2.35220000'
+                      is_verified:
+                        type: boolean
+                        example: true
+                      is_active:
+                        type: boolean
+                        example: true
+                      partnership_level:
+                        type: string
+                        example: public
+                      admin_id:
+                        type: integer
+                        example: 1
+                      created_at:
+                        type: string
+                        example: '2025-07-06T17:33:10.000000Z'
+                      updated_at:
+                        type: string
+                        example: '2025-07-06T17:33:10.000000Z'
+                      admin:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 1
+                          name:
+                            type: string
+                            example: Administrateur
+                          email:
+                            type: string
+                            example: admin@bloodbank.com
+                          email_verified_at:
+                            type: string
+                            example: '2025-07-06T17:26:54.000000Z'
+                          created_at:
+                            type: string
+                            example: '2025-07-06T17:26:54.000000Z'
+                          updated_at:
+                            type: string
+                            example: '2025-07-06T17:26:54.000000Z'
+                          phone:
+                            type: string
+                            example: null
+                          address:
+                            type: string
+                            example: null
+                          city:
+                            type: string
+                            example: null
+                          postal_code:
+                            type: string
+                            example: null
+                          blood_type_id:
+                            type: string
+                            example: null
+                          date_of_birth:
+                            type: string
+                            example: null
+                          gender:
+                            type: string
+                            example: null
+                          is_eligible_donor:
+                            type: boolean
+                            example: true
+                          role_id:
+                            type: integer
+                            example: 1
+                      blood_stocks:
+                        type: array
+                        example: []
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: 'Mettre à jour une banque de sang'
+      operationId: mettreJourUneBanqueDeSang
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: vjeqmeo
+                  nullable: false
+                description:
+                  type: string
+                  description: ''
+                  example: 'Quis et quos id quas error.'
+                  nullable: true
+                phone:
+                  type: string
+                  description: 'Must not be greater than 20 characters.'
+                  example: dzcfzsjochvbaml
+                  nullable: false
+                email:
+                  type: string
+                  description: ''
+                  example: null
+                  nullable: false
+                website:
+                  type: string
+                  description: 'Must be a valid URL.'
+                  example: 'http://www.dietrich.com/reprehenderit-eum-saepe-consequatur-consequatur-illum-laudantium-distinctio-et'
+                  nullable: true
+                address:
+                  type: string
+                  description: ''
+                  example: et
+                  nullable: false
+                city:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: ahefcgacdq
+                  nullable: false
+                postal_code:
+                  type: string
+                  description: 'Must not be greater than 10 characters.'
+                  example: ehqoxzznih
+                  nullable: false
+                country:
+                  type: string
+                  description: 'Must not be greater than 100 characters.'
+                  example: ekxtdihmtmmqypctdhiauqlq
+                  nullable: true
+                latitude:
+                  type: number
+                  description: 'Must be between -90 and 90.'
+                  example: -90
+                  nullable: true
+                longitude:
+                  type: number
+                  description: 'Must be between -180 and 180.'
+                  example: -180
+                  nullable: true
+                partnership_level:
+                  type: string
+                  description: ''
+                  example: associative
+                  nullable: false
+                  enum:
+                    - public
+                    - private
+                    - associative
+                is_active:
+                  type: boolean
+                  description: ''
+                  example: false
+                  nullable: false
+              required:
+                - name
+                - phone
+                - address
+                - city
+                - postal_code
+                - partnership_level
+      security: []
+    delete:
+      summary: 'Supprimer une banque de sang (Admin seulement)'
+      operationId: supprimerUneBanqueDeSangAdminSeulement
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the blood bank.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  '/api/blood-banks/{id}/stock':
+    get:
+      summary: "Récupérer le stock d'une banque de sang"
+      operationId: rcuprerLeStockDuneBanqueDeSang
+      description: ''
+      parameters: []
+      responses:
+        200:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  blood_bank:
+                    id: 1
+                    name: 'Centre de Transfusion Sanguine de Paris'
+                    description: 'Centre principal de transfusion sanguine de la région parisienne'
+                    phone: '01 44 49 30 00'
+                    email: contact@cts-paris.fr
+                    website: 'https://www.cts-paris.fr'
+                    address: '6 rue Alexandre Cabanel'
+                    city: Paris
+                    postal_code: '75015'
+                    country: France
+                    latitude: '48.85660000'
+                    longitude: '2.35220000'
+                    is_verified: true
+                    is_active: true
+                    partnership_level: public
+                    admin_id: 1
+                    created_at: '2025-07-06T17:33:10.000000Z'
+                    updated_at: '2025-07-06T17:33:10.000000Z'
+                    blood_stocks: []
+                  stock: []
+                  total_stock: 0
+                  has_low_stock: false
+                properties:
+                  blood_bank:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: 'Centre de Transfusion Sanguine de Paris'
+                      description:
+                        type: string
+                        example: 'Centre principal de transfusion sanguine de la région parisienne'
+                      phone:
+                        type: string
+                        example: '01 44 49 30 00'
+                      email:
+                        type: string
+                        example: contact@cts-paris.fr
+                      website:
+                        type: string
+                        example: 'https://www.cts-paris.fr'
+                      address:
+                        type: string
+                        example: '6 rue Alexandre Cabanel'
+                      city:
+                        type: string
+                        example: Paris
+                      postal_code:
+                        type: string
+                        example: '75015'
+                      country:
+                        type: string
+                        example: France
+                      latitude:
+                        type: string
+                        example: '48.85660000'
+                      longitude:
+                        type: string
+                        example: '2.35220000'
+                      is_verified:
+                        type: boolean
+                        example: true
+                      is_active:
+                        type: boolean
+                        example: true
+                      partnership_level:
+                        type: string
+                        example: public
+                      admin_id:
+                        type: integer
+                        example: 1
+                      created_at:
+                        type: string
+                        example: '2025-07-06T17:33:10.000000Z'
+                      updated_at:
+                        type: string
+                        example: '2025-07-06T17:33:10.000000Z'
+                      blood_stocks:
+                        type: array
+                        example: []
+                  stock:
+                    type: array
+                    example: []
+                  total_stock:
+                    type: integer
+                    example: 0
+                  has_low_stock:
+                    type: boolean
+                    example: false
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the blood bank.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/blood-banks/search/nearby:
+    post:
+      summary: 'Rechercher des banques par proximité'
+      operationId: rechercherDesBanquesParProximit
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                latitude:
+                  type: number
+                  description: 'Must be between -90 and 90.'
+                  example: -90
+                  nullable: false
+                longitude:
+                  type: number
+                  description: 'Must be between -180 and 180.'
+                  example: -180
+                  nullable: false
+                radius:
+                  type: number
+                  description: 'Must be at least 1. Must not be greater than 500.'
+                  example: 13
+                  nullable: true
+                blood_type_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_types table.'
+                  example: null
+                  nullable: true
+              required:
+                - latitude
+                - longitude
+      security: []
+  /api/geolocation/geocode:
+    post:
+      summary: 'Géocoder une adresse en coordonnées'
+      operationId: gocoderUneAdresseEnCoordonnes
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  description: 'Must not be greater than 500 characters.'
+                  example: cscmxmpgscqxv
+                  nullable: false
+              required:
+                - address
+      security: []
+  /api/geolocation/statistics:
+    get:
+      summary: 'Obtenir les statistiques de géolocalisation'
+      operationId: obtenirLesStatistiquesDeGolocalisation
+      description: ''
+      parameters: []
+      responses:
+        500:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: 'Server Error'
+                properties:
+                  message:
+                    type: string
+                    example: 'Server Error'
+      tags:
+        - Endpoints
+      security: []
+  /api/geolocation/nearby-banks:
+    post:
+      summary: 'Rechercher des banques de sang par proximité'
+      operationId: rechercherDesBanquesDeSangParProximit
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                latitude:
+                  type: number
+                  description: 'Must be between -90 and 90.'
+                  example: -90
+                  nullable: false
+                longitude:
+                  type: number
+                  description: 'Must be between -180 and 180.'
+                  example: -180
+                  nullable: false
+                radius_km:
+                  type: integer
+                  description: 'Must be at least 1. Must not be greater than 500.'
+                  example: 2
+                  nullable: false
+                blood_type_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_types table.'
+                  example: null
+                  nullable: false
+              required:
+                - latitude
+                - longitude
+      security: []
+  /api/geolocation/nearby-donors:
+    post:
+      summary: 'Rechercher des donneurs par proximité'
+      operationId: rechercherDesDonneursParProximit
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                latitude:
+                  type: number
+                  description: 'Must be between -90 and 90.'
+                  example: -90
+                  nullable: false
+                longitude:
+                  type: number
+                  description: 'Must be between -180 and 180.'
+                  example: -180
+                  nullable: false
+                radius_km:
+                  type: integer
+                  description: 'Must be at least 1. Must not be greater than 500.'
+                  example: 14
+                  nullable: false
+                blood_type_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_types table.'
+                  example: null
+                  nullable: false
+              required:
+                - latitude
+                - longitude
+      security: []
+  /api/contact/send:
+    post:
+      summary: 'Envoyer un message de contact'
+      operationId: envoyerUnMessageDeContact
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: earlwkwip
+                  nullable: false
+                email:
+                  type: string
+                  description: 'Must be a valid email address. Must not be greater than 255 characters.'
+                  example: nbednar@example.com
+                  nullable: false
+                subject:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: ggtbvmsrqwyqkscbrrjhydv
+                  nullable: false
+                message:
+                  type: string
+                  description: 'Must not be greater than 2000 characters.'
+                  example: tzjmbdrljgxpadohqwvmwjz
+                  nullable: false
+                phone:
+                  type: string
+                  description: 'Must not be greater than 20 characters.'
+                  example: evmcrsdonfryletltv
+                  nullable: true
+                contact_type:
+                  type: string
+                  description: ''
+                  example: partnership
+                  nullable: false
+                  enum:
+                    - general
+                    - support
+                    - partnership
+                    - emergency
+              required:
+                - name
+                - email
+                - subject
+                - message
+      security: []
+  /api/contacts:
+    get:
+      summary: 'Récupérer tous les messages de contact (admin seulement)'
+      operationId: rcuprerTousLesMessagesDeContactadminSeulement
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  '/api/contacts/{id}/process':
+    patch:
+      summary: 'Marquer un message comme traité'
+      operationId: marquerUnMessageCommeTrait
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the contact.'
+        example: dignissimos
+        required: true
+        schema:
+          type: string
+  '/api/contacts/{id}/progress':
+    patch:
+      summary: 'Marquer un message comme en cours de traitement'
+      operationId: marquerUnMessageCommeEnCoursDeTraitement
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the contact.'
+        example: delectus
+        required: true
+        schema:
+          type: string
+  '/api/contacts/{id}/respond':
+    post:
+      summary: 'Répondre à un message de contact'
+      operationId: rpondreUnMessageDeContact
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                response_message:
+                  type: string
+                  description: 'Must not be greater than 2000 characters.'
+                  example: apxtwsohyxomtmvmkoaneck
+                  nullable: false
+                response_subject:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: xgodygagbgrhmhqmowhrpb
+                  nullable: false
+              required:
+                - response_message
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the contact.'
+        example: rem
+        required: true
+        schema:
+          type: string
+  /api/contacts/statistics:
+    get:
+      summary: 'Obtenir les statistiques des contacts'
+      operationId: obtenirLesStatistiquesDesContacts
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  '/api/blood-banks/{id}/verify':
+    post:
+      summary: 'Valider une banque de sang (Admin seulement)'
+      operationId: validerUneBanqueDeSangAdminSeulement
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the blood bank.'
+        example: 1
+        required: true
+        schema:
+          type: integer
+  /api/donations:
+    get:
+      summary: 'Récupérer tous les dons (avec filtres)'
+      operationId: rcuprerTousLesDonsavecFiltres
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Créer un nouveau don'
+      operationId: crerUnNouveauDon
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                donor_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the users table.'
+                  example: sit
+                  nullable: false
+                blood_bank_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_banks table.'
+                  example: libero
+                  nullable: false
+                blood_type_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_types table.'
+                  example: error
+                  nullable: false
+                donation_date:
+                  type: string
+                  description: 'Must be a valid date. Must be a date after or equal to <code>today</code>.'
+                  example: '2046-03-10'
+                  nullable: false
+                quantity_ml:
+                  type: integer
+                  description: 'Must be at least 200. Must not be greater than 500.'
+                  example: 2
+                  nullable: false
+                notes:
+                  type: string
+                  description: '200-500ml par don.'
+                  example: quia
+                  nullable: true
+              required:
+                - donor_id
+                - blood_bank_id
+                - blood_type_id
+                - donation_date
+                - quantity_ml
+      security: []
+  '/api/donations/{id}':
+    get:
+      summary: 'Récupérer un don spécifique'
+      operationId: rcuprerUnDonSpcifique
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: 'Mettre à jour un don'
+      operationId: mettreJourUnDon
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                donation_date:
+                  type: string
+                  description: 'Must be a valid date.'
+                  example: '2025-07-06T18:32:50'
+                  nullable: false
+                quantity_ml:
+                  type: integer
+                  description: 'Must be at least 200. Must not be greater than 500.'
+                  example: 12
+                  nullable: false
+                status:
+                  type: string
+                  description: ''
+                  example: completed
+                  nullable: false
+                  enum:
+                    - scheduled
+                    - completed
+                    - cancelled
+                notes:
+                  type: string
+                  description: ''
+                  example: est
+                  nullable: true
+              required:
+                - donation_date
+                - quantity_ml
+                - status
+      security: []
+    delete:
+      summary: 'Supprimer un don'
+      operationId: supprimerUnDon
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the donation.'
+        example: id
+        required: true
+        schema:
+          type: string
+  '/api/donations/{id}/complete':
+    post:
+      summary: 'Marquer un don comme complété'
+      operationId: marquerUnDonCommeComplt
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the donation.'
+        example: quo
+        required: true
+        schema:
+          type: string
+  '/api/donations/{id}/cancel':
+    post:
+      summary: 'Annuler un don'
+      operationId: annulerUnDon
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the donation.'
+        example: quam
+        required: true
+        schema:
+          type: string
+  '/api/donations/donor/{donorId}/history':
+    get:
+      summary: "Récupérer l'historique des dons d'un donneur"
+      operationId: rcuprerLhistoriqueDesDonsDunDonneur
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: donorId
+        description: ''
+        example: accusamus
+        required: true
+        schema:
+          type: string
+  /api/donations/statistics:
+    get:
+      summary: 'Récupérer les statistiques des dons'
+      operationId: rcuprerLesStatistiquesDesDons
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  /api/stocks:
+    get:
+      summary: "Récupérer le stock d'une banque de sang"
+      operationId: rcuprerLeStockDuneBanqueDeSang
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Créer un nouveau stock'
+      operationId: crerUnNouveauStock
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                blood_bank_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_banks table.'
+                  example: adipisci
+                  nullable: false
+                blood_type_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_types table.'
+                  example: deserunt
+                  nullable: false
+                quantity_ml:
+                  type: integer
+                  description: 'Must be at least 0.'
+                  example: 31
+                  nullable: false
+                minimum_threshold:
+                  type: integer
+                  description: 'Must be at least 0.'
+                  example: 40
+                  nullable: false
+                maximum_capacity:
+                  type: integer
+                  description: 'Must be at least 0.'
+                  example: 74
+                  nullable: false
+              required:
+                - blood_bank_id
+                - blood_type_id
+                - quantity_ml
+                - minimum_threshold
+                - maximum_capacity
+      security: []
+  '/api/stocks/{id}':
+    get:
+      summary: 'Récupérer un stock spécifique'
+      operationId: rcuprerUnStockSpcifique
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: 'Mettre à jour le stock (ajustement manuel)'
+      operationId: mettreJourLeStockajustementManuel
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity_ml:
+                  type: integer
+                  description: 'Must be at least 0.'
+                  example: 23
+                  nullable: false
+                minimum_threshold:
+                  type: integer
+                  description: 'Must be at least 0.'
+                  example: 72
+                  nullable: false
+                maximum_capacity:
+                  type: integer
+                  description: 'Must be at least 0.'
+                  example: 90
+                  nullable: false
+                reason:
+                  type: string
+                  description: ''
+                  example: tempore
+                  nullable: false
+              required:
+                - quantity_ml
+                - reason
+      security: []
+    delete:
+      summary: 'Supprimer un stock'
+      operationId: supprimerUnStock
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the stock.'
+        example: quis
+        required: true
+        schema:
+          type: string
+  '/api/stocks/{id}/adjust':
+    post:
+      summary: 'Ajuster le stock (ajout ou retrait)'
+      operationId: ajusterLeStockajoutOuRetrait
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity_ml:
+                  type: integer
+                  description: ''
+                  example: 18
+                  nullable: false
+                movement_type:
+                  type: string
+                  description: ''
+                  example: out
+                  nullable: false
+                  enum:
+                    - in
+                    - out
+                reason:
+                  type: string
+                  description: ''
+                  example: voluptates
+                  nullable: false
+              required:
+                - quantity_ml
+                - movement_type
+                - reason
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the stock.'
+        example: mollitia
+        required: true
+        schema:
+          type: string
+  /api/stocks/movements:
+    get:
+      summary: "Récupérer l'historique des mouvements de stock"
+      operationId: rcuprerLhistoriqueDesMouvementsDeStock
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  /api/stocks/alerts/low-stock:
+    get:
+      summary: 'Récupérer les alertes de stock faible'
+      operationId: rcuprerLesAlertesDeStockFaible
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  /api/stocks/statistics:
+    get:
+      summary: 'Récupérer les statistiques de stock'
+      operationId: rcuprerLesStatistiquesDeStock
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  /api/patients:
+    get:
+      summary: 'Récupérer tous les patients (avec filtres)'
+      operationId: rcuprerTousLesPatientsavecFiltres
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Créer un nouveau patient'
+      operationId: crerUnNouveauPatient
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: lmgfznbfz
+                  nullable: false
+                date_of_birth:
+                  type: string
+                  description: 'Must be a valid date. Must be a date before <code>today</code>.'
+                  example: '2009-10-20'
+                  nullable: false
+                gender:
+                  type: string
+                  description: ''
+                  example: female
+                  nullable: false
+                  enum:
+                    - male
+                    - female
+                    - other
+                blood_type_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_types table.'
+                  example: est
+                  nullable: false
+                doctor_name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: ynujjdzfvykon
+                  nullable: false
+                hospital_name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: hkxkbjsdcqewqispcnlmbf
+                  nullable: false
+                phone:
+                  type: string
+                  description: 'Must not be greater than 20 characters.'
+                  example: knxbvjfgvgfkdhoyry
+                  nullable: false
+                email:
+                  type: string
+                  description: 'Must be a valid email address.'
+                  example: giovanni.stehr@example.org
+                  nullable: false
+                urgency_level:
+                  type: string
+                  description: ''
+                  example: critical
+                  nullable: false
+                  enum:
+                    - normal
+                    - urgent
+                    - critical
+              required:
+                - name
+                - date_of_birth
+                - gender
+                - blood_type_id
+                - doctor_name
+                - hospital_name
+                - phone
+                - email
+                - urgency_level
+      security: []
+  '/api/patients/{id}':
+    get:
+      summary: 'Récupérer un patient spécifique'
+      operationId: rcuprerUnPatientSpcifique
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: 'Mettre à jour un patient'
+      operationId: mettreJourUnPatient
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: yud
+                  nullable: false
+                date_of_birth:
+                  type: string
+                  description: 'Must be a valid date. Must be a date before <code>today</code>.'
+                  example: '2009-07-18'
+                  nullable: false
+                gender:
+                  type: string
+                  description: ''
+                  example: male
+                  nullable: false
+                  enum:
+                    - male
+                    - female
+                    - other
+                blood_type_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_types table.'
+                  example: laboriosam
+                  nullable: false
+                doctor_name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: fqwni
+                  nullable: false
+                hospital_name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: qzjsruhxewpzvnfjdjbkalo
+                  nullable: false
+                phone:
+                  type: string
+                  description: 'Must not be greater than 20 characters.'
+                  example: vzm
+                  nullable: false
+                email:
+                  type: string
+                  description: 'Must be a valid email address.'
+                  example: qlesch@example.net
+                  nullable: false
+                urgency_level:
+                  type: string
+                  description: ''
+                  example: critical
+                  nullable: false
+                  enum:
+                    - normal
+                    - urgent
+                    - critical
+              required:
+                - name
+                - date_of_birth
+                - gender
+                - blood_type_id
+                - doctor_name
+                - hospital_name
+                - phone
+                - email
+                - urgency_level
+      security: []
+    delete:
+      summary: 'Supprimer un patient'
+      operationId: supprimerUnPatient
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the patient.'
+        example: cumque
+        required: true
+        schema:
+          type: string
+  /api/patients/statistics:
+    get:
+      summary: 'Récupérer les statistiques des patients'
+      operationId: rcuprerLesStatistiquesDesPatients
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  /api/patients/search:
+    post:
+      summary: 'Rechercher des patients'
+      operationId: rechercherDesPatients
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: 'Must be at least 2 characters.'
+                  example: wxueursvecckmzdl
+                  nullable: false
+              required:
+                - query
+      security: []
+  /api/blood-requests:
+    get:
+      summary: 'Récupérer toutes les demandes de sang (avec filtres)'
+      operationId: rcuprerToutesLesDemandesDeSangavecFiltres
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+    post:
+      summary: 'Créer une nouvelle demande de sang'
+      operationId: crerUneNouvelleDemandeDeSang
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                patient_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the patients table.'
+                  example: rerum
+                  nullable: false
+                blood_type_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_types table.'
+                  example: aut
+                  nullable: false
+                quantity_ml:
+                  type: integer
+                  description: 'Must be at least 100. Must not be greater than 5000.'
+                  example: 5
+                  nullable: false
+                urgency_level:
+                  type: string
+                  description: '100ml à 5L.'
+                  example: urgent
+                  nullable: false
+                  enum:
+                    - normal
+                    - urgent
+                    - critical
+                requested_date:
+                  type: string
+                  description: 'Must be a valid date. Must be a date after or equal to <code>today</code>.'
+                  example: '2056-10-08'
+                  nullable: false
+                needed_by_date:
+                  type: string
+                  description: 'Must be a valid date. Must be a date after <code>requested_date</code>.'
+                  example: '2058-03-25'
+                  nullable: true
+                notes:
+                  type: string
+                  description: ''
+                  example: consectetur
+                  nullable: true
+              required:
+                - patient_id
+                - blood_type_id
+                - quantity_ml
+                - urgency_level
+                - requested_date
+      security: []
+  '/api/blood-requests/{id}':
+    get:
+      summary: 'Récupérer une demande de sang spécifique'
+      operationId: rcuprerUneDemandeDeSangSpcifique
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+    put:
+      summary: 'Mettre à jour une demande de sang'
+      operationId: mettreJourUneDemandeDeSang
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity_ml:
+                  type: integer
+                  description: 'Must be at least 100. Must not be greater than 5000.'
+                  example: 5
+                  nullable: false
+                urgency_level:
+                  type: string
+                  description: ''
+                  example: normal
+                  nullable: false
+                  enum:
+                    - normal
+                    - urgent
+                    - critical
+                status:
+                  type: string
+                  description: ''
+                  example: cancelled
+                  nullable: false
+                  enum:
+                    - pending
+                    - approved
+                    - fulfilled
+                    - cancelled
+                requested_date:
+                  type: string
+                  description: 'Must be a valid date.'
+                  example: '2025-07-06T18:32:50'
+                  nullable: false
+                needed_by_date:
+                  type: string
+                  description: 'Must be a valid date. Must be a date after <code>requested_date</code>.'
+                  example: '2091-08-12'
+                  nullable: true
+                notes:
+                  type: string
+                  description: ''
+                  example: quas
+                  nullable: true
+              required:
+                - quantity_ml
+                - urgency_level
+                - status
+                - requested_date
+      security: []
+    delete:
+      summary: 'Supprimer une demande de sang'
+      operationId: supprimerUneDemandeDeSang
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the blood request.'
+        example: optio
+        required: true
+        schema:
+          type: string
+  '/api/blood-requests/{id}/availability':
+    get:
+      summary: 'Rechercher des disponibilités pour une demande'
+      operationId: rechercherDesDisponibilitsPourUneDemande
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the blood request.'
+        example: quae
+        required: true
+        schema:
+          type: string
+  '/api/blood-requests/{id}/approve':
+    post:
+      summary: 'Approuver une demande de sang'
+      operationId: approuverUneDemandeDeSang
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the blood request.'
+        example: quisquam
+        required: true
+        schema:
+          type: string
+  '/api/blood-requests/{id}/cancel':
+    post:
+      summary: 'Annuler une demande de sang'
+      operationId: annulerUneDemandeDeSang
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the blood request.'
+        example: mollitia
+        required: true
+        schema:
+          type: string
+  '/api/blood-requests/{id}/fulfill':
+    post:
+      summary: 'Satisfaire une demande de sang'
+      operationId: satisfaireUneDemandeDeSang
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                blood_bank_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_banks table.'
+                  example: dolores
+                  nullable: false
+                quantity_ml:
+                  type: string
+                  description: ''
+                  example: null
+                  nullable: false
+                fulfillment_date:
+                  type: string
+                  description: 'Must be a valid date. Must be a date after or equal to <code>today</code>.'
+                  example: '2115-06-09'
+                  nullable: false
+                notes:
+                  type: string
+                  description: ''
+                  example: distinctio
+                  nullable: true
+              required:
+                - blood_bank_id
+                - fulfillment_date
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the blood request.'
+        example: sunt
+        required: true
+        schema:
+          type: string
+  /api/blood-requests/statistics:
+    get:
+      summary: 'Récupérer les statistiques des demandes'
+      operationId: rcuprerLesStatistiquesDesDemandes
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  /api/notifications:
+    get:
+      summary: "Récupérer les notifications de l'utilisateur connecté"
+      operationId: rcuprerLesNotificationsDeLutilisateurConnect
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  /api/notifications/unread-count:
+    get:
+      summary: 'Obtenir le nombre de notifications non lues'
+      operationId: obtenirLeNombreDeNotificationsNonLues
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  '/api/notifications/{id}/read':
+    patch:
+      summary: 'Marquer une notification comme lue'
+      operationId: marquerUneNotificationCommeLue
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the notification.'
+        example: omnis
+        required: true
+        schema:
+          type: string
+  /api/notifications/mark-all-read:
+    patch:
+      summary: 'Marquer toutes les notifications comme lues'
+      operationId: marquerToutesLesNotificationsCommeLues
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+  '/api/notifications/{id}':
+    delete:
+      summary: 'Supprimer une notification'
+      operationId: supprimerUneNotification
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the notification.'
+        example: dolorem
+        required: true
+        schema:
+          type: string
+  /api/emergencies/declare:
+    post:
+      summary: 'Déclarer une urgence'
+      operationId: dclarerUneUrgence
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                patient_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the patients table.'
+                  example: sit
+                  nullable: false
+                blood_type_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_types table.'
+                  example: ea
+                  nullable: false
+                required_quantity_ml:
+                  type: integer
+                  description: 'Must be at least 100.'
+                  example: 96
+                  nullable: false
+                urgency_level:
+                  type: string
+                  description: ''
+                  example: low
+                  nullable: false
+                  enum:
+                    - low
+                    - medium
+                    - high
+                    - critical
+                hospital_name:
+                  type: string
+                  description: 'Must not be greater than 255 characters.'
+                  example: yemyolclp
+                  nullable: false
+                hospital_address:
+                  type: string
+                  description: ''
+                  example: culpa
+                  nullable: false
+                latitude:
+                  type: number
+                  description: 'Must be between -90 and 90.'
+                  example: -90
+                  nullable: false
+                longitude:
+                  type: number
+                  description: 'Must be between -180 and 180.'
+                  example: -179
+                  nullable: false
+                contact_phone:
+                  type: string
+                  description: 'Must not be greater than 20 characters.'
+                  example: exyoqtrigj
+                  nullable: false
+                notes:
+                  type: string
+                  description: ''
+                  example: minima
+                  nullable: true
+              required:
+                - patient_id
+                - blood_type_id
+                - required_quantity_ml
+                - urgency_level
+                - hospital_name
+                - hospital_address
+                - latitude
+                - longitude
+                - contact_phone
+      security: []
+  /api/emergencies/find-banks:
+    post:
+      summary: 'Rechercher des banques de sang disponibles pour une urgence'
+      operationId: rechercherDesBanquesDeSangDisponiblesPourUneUrgence
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                blood_type_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_types table.'
+                  example: quos
+                  nullable: false
+                required_quantity_ml:
+                  type: integer
+                  description: 'Must be at least 100.'
+                  example: 90
+                  nullable: false
+                latitude:
+                  type: number
+                  description: 'Must be between -90 and 90.'
+                  example: -90
+                  nullable: false
+                longitude:
+                  type: number
+                  description: 'Must be between -180 and 180.'
+                  example: -179
+                  nullable: false
+                radius_km:
+                  type: integer
+                  description: 'Must be at least 1. Must not be greater than 500.'
+                  example: 13
+                  nullable: false
+              required:
+                - blood_type_id
+                - required_quantity_ml
+                - latitude
+                - longitude
+      security: []
+  /api/emergencies/active:
+    get:
+      summary: 'Obtenir les urgences actives'
+      operationId: obtenirLesUrgencesActives
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  '/api/emergencies/{id}/status':
+    patch:
+      summary: "Mettre à jour le statut d'une urgence"
+      operationId: mettreJourLeStatutDuneUrgence
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: ''
+                  example: fulfilled
+                  nullable: false
+                  enum:
+                    - pending
+                    - in_progress
+                    - fulfilled
+                    - cancelled
+                notes:
+                  type: string
+                  description: ''
+                  example: ut
+                  nullable: true
+              required:
+                - status
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the emergency.'
+        example: atque
+        required: true
+        schema:
+          type: string
+  /api/partnerships:
+    get:
+      summary: 'Récupérer tous les partenariats'
+      operationId: rcuprerTousLesPartenariats
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  /api/partnerships/request:
+    post:
+      summary: 'Demander un partenariat'
+      operationId: demanderUnPartenariat
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                responding_bank_id:
+                  type: string
+                  description: 'The <code>id</code> of an existing record in the blood_banks table.'
+                  example: odit
+                  nullable: false
+                partnership_type:
+                  type: string
+                  description: ''
+                  example: training
+                  nullable: false
+                  enum:
+                    - sharing
+                    - referral
+                    - training
+                    - research
+                description:
+                  type: string
+                  description: 'Must not be greater than 1000 characters.'
+                  example: 'Vel nulla ut numquam qui.'
+                  nullable: false
+                terms:
+                  type: string
+                  description: 'Must not be greater than 2000 characters.'
+                  example: drvfj
+                  nullable: true
+              required:
+                - responding_bank_id
+                - partnership_type
+                - description
+      security: []
+  '/api/partnerships/{id}/respond':
+    patch:
+      summary: 'Répondre à une demande de partenariat'
+      operationId: rpondreUneDemandeDePartenariat
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: ''
+                  example: accepted
+                  nullable: false
+                  enum:
+                    - accepted
+                    - rejected
+                response_notes:
+                  type: string
+                  description: 'Must not be greater than 1000 characters.'
+                  example: pvljaykctjz
+                  nullable: true
+              required:
+                - status
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the partnership.'
+        example: maiores
+        required: true
+        schema:
+          type: string
+  '/api/partnerships/{id}/terminate':
+    patch:
+      summary: 'Terminer un partenariat'
+      operationId: terminerUnPartenariat
+      description: ''
+      parameters: []
+      responses: {  }
+      tags:
+        - Endpoints
+      security: []
+    parameters:
+      -
+        in: path
+        name: id
+        description: 'The ID of the partnership.'
+        example: numquam
+        required: true
+        schema:
+          type: string
+  /api/partnerships/statistics:
+    get:
+      summary: 'Obtenir les statistiques des partenariats'
+      operationId: obtenirLesStatistiquesDesPartenariats
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []
+  /api/user:
+    get:
+      summary: ''
+      operationId: getApiUser
+      description: ''
+      parameters: []
+      responses:
+        401:
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Unauthenticated.
+                properties:
+                  message:
+                    type: string
+                    example: Unauthenticated.
+      tags:
+        - Endpoints
+      security: []

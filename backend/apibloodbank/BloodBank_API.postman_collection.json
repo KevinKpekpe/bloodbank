@@ -1,0 +1,573 @@
+{
+  "info": {
+    "name": "BloodBank API",
+    "description": "Collection complète pour tester l'API BloodBank - Gestion des dons de sang, banques, urgences et géolocalisation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentification",
+      "item": [
+        {
+          "name": "Inscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jean Dupont\",\n  \"email\": \"jean.dupont@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"phone\": \"+33123456789\",\n  \"address\": \"123 Rue de la Paix\",\n  \"city\": \"Paris\",\n  \"postal_code\": \"75001\",\n  \"country\": \"France\",\n  \"latitude\": 48.8566,\n  \"longitude\": 2.3522,\n  \"blood_type_id\": 1,\n  \"role\": \"donor\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Connexion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('auth_token', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@bloodbank.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Profil utilisateur",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Déconnexion",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🩸 Types de sang",
+      "item": [
+        {
+          "name": "Liste des types de sang",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blood-types",
+              "host": ["{{base_url}}"],
+              "path": ["blood-types"]
+            }
+          }
+        },
+        {
+          "name": "Types compatibles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blood-types/1/compatible",
+              "host": ["{{base_url}}"],
+              "path": ["blood-types", "1", "compatible"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏥 Banques de sang",
+      "item": [
+        {
+          "name": "Liste des banques",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blood-banks",
+              "host": ["{{base_url}}"],
+              "path": ["blood-banks"]
+            }
+          }
+        },
+        {
+          "name": "Stock d'une banque",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blood-banks/1/stock",
+              "host": ["{{base_url}}"],
+              "path": ["blood-banks", "1", "stock"]
+            }
+          }
+        },
+        {
+          "name": "Recherche par proximité",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 48.8566,\n  \"longitude\": 2.3522,\n  \"radius_km\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/blood-banks/search/nearby",
+              "host": ["{{base_url}}"],
+              "path": ["blood-banks", "search", "nearby"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💉 Dons de sang",
+      "item": [
+        {
+          "name": "Liste des dons",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/donations",
+              "host": ["{{base_url}}"],
+              "path": ["donations"]
+            }
+          }
+        },
+        {
+          "name": "Créer un don",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"donor_id\": 2,\n  \"blood_bank_id\": 1,\n  \"blood_type_id\": 1,\n  \"donation_date\": \"2025-07-07\",\n  \"quantity_ml\": 450,\n  \"notes\": \"Don régulier\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/donations",
+              "host": ["{{base_url}}"],
+              "path": ["donations"]
+            }
+          }
+        },
+        {
+          "name": "Statistiques des dons",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/donations/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["donations", "statistics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Gestion du stock",
+      "item": [
+        {
+          "name": "Liste des stocks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stocks",
+              "host": ["{{base_url}}"],
+              "path": ["stocks"]
+            }
+          }
+        },
+        {
+          "name": "Ajuster un stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity_ml\": 100,\n  \"movement_type\": \"in\",\n  \"reason\": \"Don reçu\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/stocks/1/adjust",
+              "host": ["{{base_url}}"],
+              "path": ["stocks", "1", "adjust"]
+            }
+          }
+        },
+        {
+          "name": "Alertes de stock faible",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stocks/alerts/low-stock",
+              "host": ["{{base_url}}"],
+              "path": ["stocks", "alerts", "low-stock"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👨‍⚕️ Patients",
+      "item": [
+        {
+          "name": "Liste des patients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/patients",
+              "host": ["{{base_url}}"],
+              "path": ["patients"]
+            }
+          }
+        },
+        {
+          "name": "Créer un patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Marie Dupont\",\n  \"email\": \"marie.dupont@example.com\",\n  \"phone\": \"+33123456789\",\n  \"blood_type_id\": 1,\n  \"date_of_birth\": \"1985-03-15\",\n  \"gender\": \"female\",\n  \"hospital_name\": \"Hôpital de la Pitié-Salpêtrière\",\n  \"hospital_address\": \"47-83 Boulevard de l'Hôpital, Paris\",\n  \"latitude\": 48.8361,\n  \"longitude\": 2.3614,\n  \"urgency_level\": \"medium\",\n  \"medical_notes\": \"Patient nécessitant des transfusions régulières\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients",
+              "host": ["{{base_url}}"],
+              "path": ["patients"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚨 Demandes de sang",
+      "item": [
+        {
+          "name": "Liste des demandes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blood-requests",
+              "host": ["{{base_url}}"],
+              "path": ["blood-requests"]
+            }
+          }
+        },
+        {
+          "name": "Créer une demande",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient_id\": 1,\n  \"blood_type_id\": 1,\n  \"required_quantity_ml\": 500,\n  \"urgency_level\": \"medium\",\n  \"contact_phone\": \"+33123456789\",\n  \"notes\": \"Transfusion programmée\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/blood-requests",
+              "host": ["{{base_url}}"],
+              "path": ["blood-requests"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "item": [
+        {
+          "name": "Liste des notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            }
+          }
+        },
+        {
+          "name": "Notifications non lues",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/unread-count",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "unread-count"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚨 Urgences",
+      "item": [
+        {
+          "name": "Déclarer une urgence",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient_id\": 1,\n  \"blood_type_id\": 1,\n  \"required_quantity_ml\": 1000,\n  \"urgency_level\": \"critical\",\n  \"hospital_name\": \"Hôpital de la Pitié-Salpêtrière\",\n  \"hospital_address\": \"47-83 Boulevard de l'Hôpital, Paris\",\n  \"latitude\": 48.8361,\n  \"longitude\": 2.3614,\n  \"contact_phone\": \"+33123456789\",\n  \"notes\": \"URGENCE - Chirurgie cardiaque\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/emergencies/declare",
+              "host": ["{{base_url}}"],
+              "path": ["emergencies", "declare"]
+            }
+          }
+        },
+        {
+          "name": "Urgences actives",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/emergencies/active",
+              "host": ["{{base_url}}"],
+              "path": ["emergencies", "active"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🗺️ Géolocalisation",
+      "item": [
+        {
+          "name": "Géocoder une adresse",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"Paris, France\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/geolocation/geocode",
+              "host": ["{{base_url}}"],
+              "path": ["geolocation", "geocode"]
+            }
+          }
+        },
+        {
+          "name": "Banques proches",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 48.8566,\n  \"longitude\": 2.3522,\n  \"radius_km\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/geolocation/nearby-banks",
+              "host": ["{{base_url}}"],
+              "path": ["geolocation", "nearby-banks"]
+            }
+          }
+        },
+        {
+          "name": "Statistiques géographiques",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/geolocation/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["geolocation", "statistics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤝 Partenariats",
+      "item": [
+        {
+          "name": "Liste des partenariats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/partnerships",
+              "host": ["{{base_url}}"],
+              "path": ["partnerships"]
+            }
+          }
+        },
+        {
+          "name": "Demander un partenariat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responding_bank_id\": 2,\n  \"partnership_type\": \"sharing\",\n  \"description\": \"Partage de stocks en cas d'urgence\",\n  \"terms\": \"Accord de partage mutuel des stocks\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/partnerships/request",
+              "host": ["{{base_url}}"],
+              "path": ["partnerships", "request"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📞 Contact",
+      "item": [
+        {
+          "name": "Envoyer un message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sophie Contact\",\n  \"email\": \"sophie.contact@example.com\",\n  \"subject\": \"Demande d'information\",\n  \"message\": \"Bonjour, j'aimerais avoir des informations sur les dons de sang.\",\n  \"phone\": \"+33123456789\",\n  \"contact_type\": \"general\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/contact/send",
+              "host": ["{{base_url}}"],
+              "path": ["contact", "send"]
+            }
+          }
+        },
+        {
+          "name": "Liste des messages (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/contacts",
+              "host": ["{{base_url}}"],
+              "path": ["contacts"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
