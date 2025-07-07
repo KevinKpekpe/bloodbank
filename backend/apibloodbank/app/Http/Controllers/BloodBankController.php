@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BloodBank;
 use App\Models\BloodType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
@@ -91,28 +92,20 @@ class BloodBankController extends Controller
 
         $latitude = $request->latitude;
         $longitude = $request->longitude;
-        $radiusKm = $request->radius_km;
+        $radiusKm = $request->get('radius_km', 50); // Rayon par défaut 50km
         $bloodTypeId = $request->blood_type_id;
         $search = $request->search;
 
-        // Si pas de coordonnées, on utilise le centre de la France
-        if (!$latitude || !$longitude) {
-            $latitude = 46.603354;
-            $longitude = 1.888334;
-        }
+        // DEBUG: Récupérer toutes les banques actives sans filtrage pour diagnostiquer
+        $query = BloodBank::active();
 
-        $query = BloodBank::where('is_verified', true)
-            ->where('is_active', true);
+        // DEBUG: Log du nombre de banques récupérées
+        $totalBanks = $query->count();
+        Log::info("Total banques actives: " . $totalBanks);
 
-        // Recherche textuelle (insensible à la casse)
-        if ($search) {
-            $searchLower = strtolower($search);
-            $query->where(function ($q) use ($searchLower) {
-                $q->whereRaw('LOWER(name) LIKE ?', ['%' . $searchLower . '%'])
-                  ->orWhereRaw('LOWER(city) LIKE ?', ['%' . $searchLower . '%'])
-                  ->orWhereRaw('LOWER(postal_code) LIKE ?', ['%' . $searchLower . '%'])
-                  ->orWhereRaw('LOWER(address) LIKE ?', ['%' . $searchLower . '%']);
-            });
+        // Appliquer le filtre de proximité seulement si latitude/longitude sont fournis ET si on a des banques
+        if ($latitude && $longitude && $totalBanks > 0) {
+            $query = $query->nearby($latitude, $longitude, $radiusKm);
         }
 
         // Filtrer par type de sang si spécifié
@@ -124,16 +117,26 @@ class BloodBankController extends Controller
         }
 
         $bloodBanks = $query->with(['bloodStocks.bloodType'])
-            ->get()
-            ->map(function ($bank) use ($latitude, $longitude) {
-                // Calculer la distance manuellement
-                $distance = $this->calculateDistance(
-                    $latitude,
-                    $longitude,
-                    $bank->latitude,
-                    $bank->longitude
-                );
+            ->get();
 
+        // DEBUG: log du nombre de banques récupérées après filtres
+        Log::info("Banques après filtres: " . $bloodBanks->count());
+
+        // Recherche textuelle simplifiée - seulement si on a un terme de recherche
+        if ($search && $bloodBanks->count() > 0) {
+            $searchLower = strtolower(trim($search));
+            $bloodBanks = $bloodBanks->filter(function ($bank) use ($searchLower) {
+                return strpos(strtolower($bank->name), $searchLower) !== false ||
+                       strpos(strtolower($bank->city), $searchLower) !== false ||
+                       strpos(strtolower($bank->address), $searchLower) !== false;
+            });
+        }
+
+        // DEBUG: log du nombre final
+        Log::info("Banques finales: " . $bloodBanks->count());
+
+        $bloodBanks = $bloodBanks
+            ->map(function ($bank) {
                 return [
                     'id' => $bank->id,
                     'name' => $bank->name,
@@ -144,7 +147,7 @@ class BloodBankController extends Controller
                     'email' => $bank->email,
                     'latitude' => $bank->latitude,
                     'longitude' => $bank->longitude,
-                    'distance' => round($distance, 1),
+                    'distance' => isset($bank->distance) ? round($bank->distance, 1) : null,
                     'stock_summary' => $bank->bloodStocks->groupBy('blood_type_id')->map(function ($items) {
                         return [
                             'total_quantity' => $items->sum('quantity_ml'),
@@ -153,33 +156,18 @@ class BloodBankController extends Controller
                     })
                 ];
             })
-            ->sortBy('distance')
             ->values();
 
         return response()->json([
             'success' => true,
             'data' => $bloodBanks,
-            'count' => $bloodBanks->count()
+            'count' => $bloodBanks->count(),
+            'debug' => [
+                'total_active' => $totalBanks,
+                'search_term' => $search,
+                'has_coordinates' => !empty($latitude) && !empty($longitude)
+            ]
         ]);
-    }
-
-    /**
-     * Calculer la distance entre deux points géographiques (formule de Haversine)
-     */
-    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
-    {
-        $earthRadius = 6371; // Rayon de la Terre en km
-
-        $latDelta = deg2rad($lat2 - $lat1);
-        $lonDelta = deg2rad($lon2 - $lon1);
-
-        $a = sin($latDelta / 2) * sin($latDelta / 2) +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($lonDelta / 2) * sin($lonDelta / 2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return $earthRadius * $c;
     }
 
     /**

@@ -1,25 +1,16 @@
 import './bootstrap';
 import '../css/app.css';
 
-import { createApp, h } from 'vue';
-import { createInertiaApp } from '@inertiajs/vue3';
-import { InertiaProgress } from '@inertiajs/progress';
+import { createApp } from 'vue'
+import router from './router'
 
-createInertiaApp({
-    resolve: name => {
-        const pages = import.meta.glob('./Pages/**/*.vue', { eager: true })
-        return pages[`./Pages/${name}.vue`]
-    },
-    setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
-            .use(plugin)
-            .mount(el)
-    },
-});
+// Import du composant principal
+import App from './App.vue'
 
-// Configuration de la barre de progression
-InertiaProgress.init({
-    color: '#dc2626',
-    showSpinner: true,
-    delay: 250,
-});
+const app = createApp(App)
+
+// Utiliser le router
+app.use(router)
+
+// Monter l'application
+app.mount('#app')

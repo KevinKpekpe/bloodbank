@@ -6,9 +6,11 @@ use App\Models\Donation;
 use App\Models\BloodBank;
 use App\Models\BloodStock;
 use App\Models\StockMovement;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class DonationController extends Controller
 {
@@ -48,6 +50,234 @@ class DonationController extends Controller
 
         return response()->json([
             'donations' => $donations
+        ]);
+    }
+
+    /**
+     * Récupérer l'historique des dons de l'utilisateur connecté
+     */
+    public function history()
+    {
+        $user = Auth::user();
+
+        $donations = Donation::where('donor_id', $user->id)
+            ->with(['bloodBank', 'bloodType'])
+            ->orderBy('donation_date', 'desc')
+            ->get()
+            ->map(function ($donation) {
+                return [
+                    'id' => $donation->id,
+                    'blood_bank_name' => $donation->bloodBank->name,
+                    'donation_date' => $donation->donation_date,
+                    'donation_type' => $donation->donation_type ?? 'Sang total',
+                    'status' => $donation->status,
+                    'quantity_ml' => $donation->quantity_ml,
+                    'blood_type' => $donation->bloodType->name ?? 'Non spécifié'
+                ];
+            });
+
+        return response()->json([
+            'data' => $donations
+        ]);
+    }
+
+    /**
+     * Récupérer les statistiques du donneur
+     */
+    public function stats()
+    {
+        $user = Auth::user();
+
+        $totalDonations = Donation::where('donor_id', $user->id)
+            ->where('status', 'completed')
+            ->count();
+
+        $lastDonation = Donation::where('donor_id', $user->id)
+            ->where('status', 'completed')
+            ->orderBy('donation_date', 'desc')
+            ->first();
+
+        $nextDonation = Donation::where('donor_id', $user->id)
+            ->where('status', 'scheduled')
+            ->orderBy('donation_date', 'asc')
+            ->first();
+
+        // Vérifier l'éligibilité
+        $eligible = $this->checkEligibility($user);
+
+        return response()->json([
+            'data' => [
+                'total_donations' => $totalDonations,
+                'last_donation' => $lastDonation ? $lastDonation->donation_date : null,
+                'next_donation' => $nextDonation ? $nextDonation->donation_date : null,
+                'eligible' => $eligible
+            ]
+        ]);
+    }
+
+    /**
+     * Vérifier l'éligibilité du donneur
+     */
+    public function eligibility()
+    {
+        $user = Auth::user();
+        $eligible = $this->checkEligibility($user);
+
+        return response()->json([
+            'data' => [
+                'eligible' => $eligible,
+                'reasons' => $this->getEligibilityReasons($user)
+            ]
+        ]);
+    }
+
+    /**
+     * Prendre un rendez-vous de don
+     */
+    public function bookAppointment(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'blood_bank_id' => 'required|exists:blood_banks,id',
+            'preferred_date' => 'required|date|after:today',
+            'preferred_time' => 'required|string',
+            'donation_type' => 'required|in:whole_blood,plasma,platelets',
+            'notes' => 'nullable|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Erreur de validation',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = Auth::user();
+
+        // Vérifier l'éligibilité
+        if (!$this->checkEligibility($user)) {
+            return response()->json([
+                'message' => 'Vous n\'êtes pas éligible pour faire un don à ce moment'
+            ], 400);
+        }
+
+        // Vérifier la disponibilité
+        if (!$this->checkAvailability($request->blood_bank_id, $request->preferred_date, $request->preferred_time)) {
+            return response()->json([
+                'message' => 'Créneau non disponible'
+            ], 400);
+        }
+
+        // Créer le rendez-vous
+        $donation = Donation::create([
+            'donor_id' => $user->id,
+            'blood_bank_id' => $request->blood_bank_id,
+            'donation_date' => $request->preferred_date . ' ' . $request->preferred_time,
+            'donation_type' => $request->donation_type,
+            'status' => 'scheduled',
+            'notes' => $request->notes,
+            'quantity_ml' => $this->getDefaultQuantity($request->donation_type)
+        ]);
+
+        return response()->json([
+            'message' => 'Rendez-vous réservé avec succès',
+            'data' => $donation->load(['bloodBank'])
+        ], 201);
+    }
+
+    /**
+     * Annuler un rendez-vous
+     */
+    public function cancelAppointment($id)
+    {
+        $user = Auth::user();
+
+        $donation = Donation::where('id', $id)
+            ->where('donor_id', $user->id)
+            ->where('status', 'scheduled')
+            ->first();
+
+        if (!$donation) {
+            return response()->json([
+                'message' => 'Rendez-vous non trouvé ou non annulable'
+            ], 404);
+        }
+
+        $donation->update(['status' => 'cancelled']);
+
+        return response()->json([
+            'message' => 'Rendez-vous annulé avec succès'
+        ]);
+    }
+
+    /**
+     * Récupérer les disponibilités d'une banque de sang
+     */
+    public function availability(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'blood_bank_id' => 'required|exists:blood_banks,id',
+            'date' => 'required|date|after:today'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Erreur de validation',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $bookedSlots = Donation::where('blood_bank_id', $request->blood_bank_id)
+            ->whereDate('donation_date', $request->date)
+            ->where('status', 'scheduled')
+            ->pluck('donation_date')
+            ->map(function ($date) {
+                return date('H:i', strtotime($date));
+            })
+            ->toArray();
+
+        $availableSlots = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
+        $availableSlots = array_diff($availableSlots, $bookedSlots);
+
+        return response()->json([
+            'data' => [
+                'date' => $request->date,
+                'available_slots' => array_values($availableSlots),
+                'booked_slots' => $bookedSlots
+            ]
+        ]);
+    }
+
+    /**
+     * Récupérer les types de don disponibles
+     */
+    public function types()
+    {
+        $types = [
+            [
+                'id' => 'whole_blood',
+                'name' => 'Sang total',
+                'description' => 'Don de sang complet',
+                'duration' => '10-15 minutes',
+                'frequency' => '56 jours'
+            ],
+            [
+                'id' => 'plasma',
+                'name' => 'Plasma',
+                'description' => 'Don de plasma uniquement',
+                'duration' => '45-60 minutes',
+                'frequency' => '14 jours'
+            ],
+            [
+                'id' => 'platelets',
+                'name' => 'Plaquettes',
+                'description' => 'Don de plaquettes uniquement',
+                'duration' => '60-90 minutes',
+                'frequency' => '7 jours'
+            ]
+        ];
+
+        return response()->json([
+            'data' => $types
         ]);
     }
 
@@ -199,16 +429,8 @@ class DonationController extends Controller
             ], 400);
         }
 
-        if ($donation->status === 'cancelled') {
-            return response()->json([
-                'message' => 'Impossible de compléter un don annulé'
-            ], 400);
-        }
-
-        DB::transaction(function () use ($donation) {
-            $donation->update(['status' => 'completed']);
-            $this->updateStockFromDonation($donation);
-        });
+        $donation->update(['status' => 'completed']);
+        $this->updateStockFromDonation($donation);
 
         return response()->json([
             'message' => 'Don marqué comme complété',
@@ -235,10 +457,9 @@ class DonationController extends Controller
             ], 400);
         }
 
+        // Si le don était complété, retirer du stock
         if ($donation->status === 'completed') {
-            return response()->json([
-                'message' => 'Impossible d\'annuler un don complété'
-            ], 400);
+            $this->removeStockFromDonation($donation);
         }
 
         $donation->update(['status' => 'cancelled']);
@@ -250,24 +471,22 @@ class DonationController extends Controller
     }
 
     /**
-     * Récupérer l'historique des dons d'un donneur
+     * Historique des dons d'un donneur spécifique
      */
     public function donorHistory($donorId)
     {
-        $donations = Donation::with(['bloodBank', 'bloodType'])
-                            ->where('donor_id', $donorId)
-                            ->orderBy('donation_date', 'desc')
-                            ->get();
+        $donations = Donation::where('donor_id', $donorId)
+            ->with(['bloodBank', 'bloodType'])
+            ->orderBy('donation_date', 'desc')
+            ->get();
 
         return response()->json([
-            'donations' => $donations,
-            'total_donations' => $donations->count(),
-            'total_quantity' => $donations->where('status', 'completed')->sum('quantity_ml'),
+            'donations' => $donations
         ]);
     }
 
     /**
-     * Récupérer les statistiques des dons
+     * Statistiques des dons
      */
     public function statistics(Request $request)
     {
@@ -282,26 +501,139 @@ class DonationController extends Controller
             $query->where('donation_date', '<=', $request->date_to);
         }
 
-        $statistics = [
+        $stats = [
             'total_donations' => $query->count(),
             'completed_donations' => $query->where('status', 'completed')->count(),
             'scheduled_donations' => $query->where('status', 'scheduled')->count(),
             'cancelled_donations' => $query->where('status', 'cancelled')->count(),
             'total_quantity_ml' => $query->where('status', 'completed')->sum('quantity_ml'),
-            'by_blood_type' => $query->where('status', 'completed')
-                                   ->join('blood_types', 'donations.blood_type_id', '=', 'blood_types.id')
-                                   ->selectRaw('blood_types.name, COUNT(*) as count, SUM(donations.quantity_ml) as total_ml')
-                                   ->groupBy('blood_types.id', 'blood_types.name')
-                                   ->get(),
+            'donations_by_type' => $query->where('status', 'completed')
+                ->selectRaw('donation_type, COUNT(*) as count')
+                ->groupBy('donation_type')
+                ->get()
         ];
 
         return response()->json([
-            'statistics' => $statistics
+            'statistics' => $stats
         ]);
     }
 
     /**
-     * Mettre à jour le stock à partir d'un don complété
+     * Vérifier l'éligibilité d'un utilisateur
+     */
+    private function checkEligibility($user)
+    {
+        // Vérifier l'âge (18-70 ans)
+        $age = date_diff(date_create($user->birth_date), date_create('today'))->y;
+        if ($age < 18 || $age > 70) {
+            return false;
+        }
+
+        // Vérifier le poids (minimum 50kg)
+        if ($user->weight && $user->weight < 50) {
+            return false;
+        }
+
+        // Vérifier le dernier don (minimum 56 jours)
+        $lastDonation = Donation::where('donor_id', $user->id)
+            ->where('status', 'completed')
+            ->orderBy('donation_date', 'desc')
+            ->first();
+
+        if ($lastDonation) {
+            $daysSinceLastDonation = date_diff(
+                date_create($lastDonation->donation_date),
+                date_create('today')
+            )->days;
+
+            if ($daysSinceLastDonation < 56) {
+                return false;
+            }
+        }
+
+        // Vérifier la santé générale
+        if (!$user->is_eligible_donor) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Obtenir les raisons d'inéligibilité
+     */
+    private function getEligibilityReasons($user)
+    {
+        $reasons = [];
+
+        // Vérifier l'âge
+        $age = date_diff(date_create($user->birth_date), date_create('today'))->y;
+        if ($age < 18) {
+            $reasons[] = 'Âge insuffisant (minimum 18 ans)';
+        } elseif ($age > 70) {
+            $reasons[] = 'Âge trop élevé (maximum 70 ans)';
+        }
+
+        // Vérifier le poids
+        if ($user->weight && $user->weight < 50) {
+            $reasons[] = 'Poids insuffisant (minimum 50 kg)';
+        }
+
+        // Vérifier le dernier don
+        $lastDonation = Donation::where('donor_id', $user->id)
+            ->where('status', 'completed')
+            ->orderBy('donation_date', 'desc')
+            ->first();
+
+        if ($lastDonation) {
+            $daysSinceLastDonation = date_diff(
+                date_create($lastDonation->donation_date),
+                date_create('today')
+            )->days;
+
+            if ($daysSinceLastDonation < 56) {
+                $reasons[] = 'Délai insuffisant depuis le dernier don (minimum 56 jours)';
+            }
+        }
+
+        // Vérifier la santé générale
+        if (!$user->is_eligible_donor) {
+            $reasons[] = 'Problème de santé détecté';
+        }
+
+        return $reasons;
+    }
+
+    /**
+     * Vérifier la disponibilité d'un créneau
+     */
+    private function checkAvailability($bloodBankId, $date, $time)
+    {
+        $existingDonation = Donation::where('blood_bank_id', $bloodBankId)
+            ->whereDate('donation_date', $date)
+            ->whereTime('donation_date', $time)
+            ->where('status', 'scheduled')
+            ->exists();
+
+        return !$existingDonation;
+    }
+
+    /**
+     * Obtenir la quantité par défaut selon le type de don
+     */
+    private function getDefaultQuantity($donationType)
+    {
+        $quantities = [
+            'whole_blood' => 450,
+            'plasma' => 600,
+            'platelets' => 200
+        ];
+
+        return $quantities[$donationType] ?? 450;
+    }
+
+    /**
+     * Mettre à jour le stock après un don complété
      */
     private function updateStockFromDonation($donation)
     {
@@ -335,7 +667,7 @@ class DonationController extends Controller
     }
 
     /**
-     * Retirer le stock d'un don supprimé
+     * Retirer du stock après annulation d'un don complété
      */
     private function removeStockFromDonation($donation)
     {

@@ -14,6 +14,7 @@ use App\Http\Controllers\EmergencyController;
 use App\Http\Controllers\GeolocationController;
 use App\Http\Controllers\PartnershipController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\BloodBankRegistrationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,6 +50,12 @@ Route::prefix('blood-banks')->group(function () {
     Route::get('/{id}', [BloodBankController::class, 'show']);
     Route::get('/{id}/stock', [BloodBankController::class, 'getStock']);
     Route::post('/search/nearby', [BloodBankController::class, 'searchNearby']);
+    Route::post('/register', [BloodBankRegistrationController::class, 'register']);
+});
+
+// Routes pour l'enregistrement des banques de sang (publiques)
+Route::prefix('blood-bank-registration')->group(function () {
+    Route::post('/register', [BloodBankRegistrationController::class, 'register']);
 });
 
 // Routes pour la géolocalisation
@@ -103,6 +110,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}/dashboard', [BloodBankController::class, 'dashboard']);
     });
 
+    // Routes pour la validation des banques de sang (Admin seulement)
+    Route::prefix('blood-bank-registration')->middleware('role:admin')->group(function () {
+        Route::get('/pending', [BloodBankRegistrationController::class, 'pendingVerification']);
+        Route::post('/{id}/verify', [BloodBankRegistrationController::class, 'verify']);
+    });
+
     // Routes pour les dons (Donor, Blood Bank, Admin)
     Route::prefix('donations')->group(function () {
         Route::get('/', [DonationController::class, 'index']);
@@ -114,6 +127,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/cancel', [DonationController::class, 'cancel']);
         Route::get('/donor/{donorId}/history', [DonationController::class, 'donorHistory']);
         Route::get('/statistics', [DonationController::class, 'statistics']);
+
+        // Nouvelles routes pour la gestion des dons utilisateur
+        Route::get('/history', [DonationController::class, 'history']);
+        Route::get('/stats', [DonationController::class, 'stats']);
+        Route::get('/eligibility', [DonationController::class, 'eligibility']);
+        Route::post('/appointments', [DonationController::class, 'bookAppointment']);
+        Route::delete('/appointments/{id}', [DonationController::class, 'cancelAppointment']);
+        Route::get('/availability', [DonationController::class, 'availability']);
+        Route::get('/types', [DonationController::class, 'types']);
     });
 
     // Routes pour la gestion du stock (Blood Bank, Admin)
@@ -154,12 +176,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/statistics', [BloodRequestController::class, 'statistics']);
     });
 
-    // Routes pour les notifications (protégées)
-    Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
-    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::patch('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
-    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+    // Routes pour les notifications
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::patch('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+        Route::get('/statistics', [NotificationController::class, 'statistics']);
+        Route::patch('/mark-multiple-read', [NotificationController::class, 'markMultipleAsRead']);
+        Route::delete('/delete-multiple', [NotificationController::class, 'deleteMultiple']);
+
+        // Routes admin pour créer des notifications
+        Route::post('/', [NotificationController::class, 'store'])->middleware('role:admin');
+        Route::post('/bulk', [NotificationController::class, 'sendBulkNotifications'])->middleware('role:admin');
+    });
 
     // Routes pour les urgences (protégées)
     Route::post('/emergencies/declare', [EmergencyController::class, 'declare']);
