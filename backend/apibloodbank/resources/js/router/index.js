@@ -8,6 +8,7 @@ import Contact from '@/Pages/Contact.vue'
 import Donate from '@/Pages/Donate.vue'
 import BloodBanks from '@/Pages/BloodBanks.vue'
 import BloodBankRegister from '@/Pages/BloodBank/Register.vue'
+import BloodBankDashboard from '@/Pages/BloodBank/Dashboard.vue'
 import Login from '@/Pages/Auth/Login.vue'
 import Register from '@/Pages/Auth/Register.vue'
 import ForgotPassword from '@/Pages/Auth/ForgotPassword.vue'
@@ -74,6 +75,12 @@ const routes = [
         name: 'dashboard',
         component: Dashboard,
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/blood-bank/dashboard',
+        name: 'blood-bank-dashboard',
+        component: BloodBankDashboard,
+        meta: { requiresAuth: true, requiresRole: 'admin' }
     },
     {
         path: '/donations',

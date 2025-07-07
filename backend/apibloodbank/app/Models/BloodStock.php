@@ -15,7 +15,8 @@ class BloodStock extends Model
         'quantity_ml',
         'minimum_threshold',
         'maximum_capacity',
-        'last_updated'
+        'last_updated',
+        'last_updated_by'
     ];
 
     protected $casts = [
@@ -34,6 +35,16 @@ class BloodStock extends Model
     public function bloodType()
     {
         return $this->belongsTo(BloodType::class);
+    }
+
+    public function history()
+    {
+        return $this->hasMany(StockHistory::class, 'stock_id');
+    }
+
+    public function lastUpdatedBy()
+    {
+        return $this->belongsTo(User::class, 'last_updated_by');
     }
 
     // Scopes

@@ -93,6 +93,14 @@
                                 Dashboard
                             </router-link>
                             <router-link
+                                v-if="currentUser?.role === 'admin'"
+                                to="/blood-bank/dashboard"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                @click="showUserMenu = false"
+                            >
+                                Dashboard Banque
+                            </router-link>
+                            <router-link
                                 to="/donations"
                                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                 @click="showUserMenu = false"
@@ -239,6 +247,14 @@
                         @click="showMobileMenu = false"
                     >
                         Dashboard
+                    </router-link>
+                    <router-link
+                        v-if="isAuthenticated && currentUser?.role === 'admin'"
+                        to="/blood-bank/dashboard"
+                        class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+                        @click="showMobileMenu = false"
+                    >
+                        Dashboard Banque
                     </router-link>
                     <router-link
                         v-if="isAuthenticated"

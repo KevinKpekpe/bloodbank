@@ -99,14 +99,28 @@ class BloodBankRegistrationController extends Controller
                 'is_active' => true,
             ]);
 
+            // Créer automatiquement les stocks pour tous les types de sang
+            $bloodTypes = \App\Models\BloodType::all();
+            foreach ($bloodTypes as $bloodType) {
+                \App\Models\BloodStock::create([
+                    'blood_bank_id' => $bloodBank->id,
+                    'blood_type_id' => $bloodType->id,
+                    'quantity_ml' => 0, // Stock initial à zéro
+                    'minimum_threshold' => 1000, // Seuil d'alerte par défaut (1L)
+                    'maximum_capacity' => 10000, // Capacité maximale par défaut (10L)
+                    'last_updated' => now(),
+                ]);
+            }
+
             DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Banque de sang et administrateur créés avec succès. Votre compte sera validé par un administrateur.',
                 'data' => [
-                    'blood_bank' => $bloodBank->load('admin'),
-                    'admin' => $admin
+                    'blood_bank' => $bloodBank->load(['admin', 'bloodStocks.bloodType']),
+                    'admin' => $admin,
+                    'stocks_created' => $bloodTypes->count()
                 ]
             ], 201);
 

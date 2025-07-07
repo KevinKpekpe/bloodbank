@@ -149,6 +149,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/movements', [StockController::class, 'movements']);
         Route::get('/alerts/low-stock', [StockController::class, 'lowStockAlerts']);
         Route::get('/statistics', [StockController::class, 'statistics']);
+        Route::get('/{id}/history', [StockController::class, 'getHistory']);
+    });
+
+    // Routes pour les stocks d'une banque spécifique
+    Route::prefix('blood-banks')->group(function () {
+        Route::get('/{bankId}/stocks', [StockController::class, 'getStocks']);
     });
 
     // Routes pour les patients (Doctor, Admin)

@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BloodStock;
+use App\Models\BloodStock as Stock;
 use App\Models\StockMovement;
 use App\Models\BloodBank;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class StockController extends Controller
 {
@@ -24,7 +25,7 @@ class StockController extends Controller
      */
     public function index(Request $request)
     {
-        $query = BloodStock::with(['bloodBank', 'bloodType']);
+        $query = Stock::with(['bloodBank', 'bloodType']);
 
         if ($request->has('blood_bank_id')) {
             $query->where('blood_bank_id', $request->blood_bank_id);
@@ -46,7 +47,7 @@ class StockController extends Controller
      */
     public function show($id)
     {
-        $stock = BloodStock::with(['bloodBank', 'bloodType'])->find($id);
+        $stock = Stock::with(['bloodBank', 'bloodType'])->find($id);
 
         if (!$stock) {
             return response()->json([
@@ -64,7 +65,7 @@ class StockController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $stock = BloodStock::find($id);
+        $stock = Stock::find($id);
 
         if (!$stock) {
             return response()->json([
@@ -74,44 +75,50 @@ class StockController extends Controller
 
         $validator = Validator::make($request->all(), [
             'quantity_ml' => 'required|integer|min:0',
-            'minimum_threshold' => 'sometimes|integer|min:0',
-            'maximum_capacity' => 'sometimes|integer|min:0',
-            'reason' => 'required|string',
+            'minimum_threshold' => 'required|integer|min:0',
+            'maximum_capacity' => 'required|integer|min:0',
+            'reason' => 'required|string|max:255'
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        // Vérifier que la quantité ne dépasse pas la capacité maximale
+        if ($request->quantity_ml > $request->maximum_capacity) {
+            return response()->json(['message' => 'La quantité ne peut pas dépasser la capacité maximale'], 422);
+        }
+
+        // Sauvegarder l'ancienne quantité pour l'historique
         $oldQuantity = $stock->quantity_ml;
-        $newQuantity = $request->quantity_ml;
-        $difference = $newQuantity - $oldQuantity;
 
-        DB::transaction(function () use ($stock, $request, $difference) {
-            // Mettre à jour le stock
-            $stock->update([
-                'quantity_ml' => $request->quantity_ml,
-                'minimum_threshold' => $request->minimum_threshold ?? $stock->minimum_threshold,
-                'maximum_capacity' => $request->maximum_capacity ?? $stock->maximum_capacity,
-                'last_updated' => now(),
+        // Mettre à jour le stock
+        $stock->update([
+            'quantity_ml' => $request->quantity_ml,
+            'minimum_threshold' => $request->minimum_threshold,
+            'maximum_capacity' => $request->maximum_capacity,
+            'last_updated_by' => Auth::id()
+        ]);
+
+        // Créer un enregistrement d'historique
+        $stock->history()->create([
+            'old_quantity' => $oldQuantity,
+            'new_quantity' => $request->quantity_ml,
+            'reason' => $request->reason,
+            'updated_by' => Auth::id()
+        ]);
+
+        // Vérifier si le stock est en alerte
+        if ($stock->quantity_ml <= $stock->minimum_threshold) {
+            // Créer une notification pour l'admin
+            $bank = $stock->bloodBank;
+            $bank->notifications()->create([
+                'title' => 'Alerte stock faible',
+                'message' => "Le stock de {$stock->bloodType->name} est faible ({$stock->quantity_ml}ml). Seuil minimum: {$stock->minimum_threshold}ml",
+                'type' => 'warning',
+                'user_id' => Auth::id()
             ]);
-
-            // Enregistrer le mouvement si il y a une différence
-            if ($difference != 0) {
-                StockMovement::create([
-                    'blood_bank_id' => $stock->blood_bank_id,
-                    'blood_type_id' => $stock->blood_type_id,
-                    'quantity_ml' => abs($difference),
-                    'movement_type' => $difference > 0 ? 'in' : 'out',
-                    'reason' => $request->reason,
-                    'reference_id' => null,
-                    'reference_type' => null,
-                ]);
-            }
-        });
+        }
 
         return response()->json([
             'message' => 'Stock mis à jour avec succès',
@@ -124,7 +131,7 @@ class StockController extends Controller
      */
     public function adjust(Request $request, $id)
     {
-        $stock = BloodStock::find($id);
+        $stock = Stock::find($id);
 
         if (!$stock) {
             return response()->json([
@@ -230,7 +237,7 @@ class StockController extends Controller
      */
     public function lowStockAlerts()
     {
-        $lowStocks = BloodStock::with(['bloodBank', 'bloodType'])
+        $lowStocks = Stock::with(['bloodBank', 'bloodType'])
                               ->whereRaw('quantity_ml <= minimum_threshold')
                               ->get();
 
@@ -245,7 +252,7 @@ class StockController extends Controller
      */
     public function statistics(Request $request)
     {
-        $query = BloodStock::with(['bloodBank', 'bloodType']);
+        $query = Stock::with(['bloodBank', 'bloodType']);
 
         if ($request->has('blood_bank_id')) {
             $query->where('blood_bank_id', $request->blood_bank_id);
@@ -289,28 +296,35 @@ class StockController extends Controller
             'blood_type_id' => 'required|exists:blood_types,id',
             'quantity_ml' => 'required|integer|min:0',
             'minimum_threshold' => 'required|integer|min:0',
-            'maximum_capacity' => 'required|integer|min:0',
+            'maximum_capacity' => 'required|integer|min:0'
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Vérifier qu'il n'y a pas déjà un stock pour cette combinaison
-        $existingStock = BloodStock::where('blood_bank_id', $request->blood_bank_id)
-                                  ->where('blood_type_id', $request->blood_type_id)
-                                  ->first();
+        // Vérifier que l'utilisateur est admin de cette banque
+        if (Auth::user()->role !== 'admin' || Auth::user()->blood_bank_id !== $request->blood_bank_id) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
+
+        // Vérifier qu'il n'y a pas déjà un stock pour ce type de sang
+        $existingStock = Stock::where('blood_bank_id', $request->blood_bank_id)
+            ->where('blood_type_id', $request->blood_type_id)
+            ->first();
 
         if ($existingStock) {
-            return response()->json([
-                'message' => 'Un stock existe déjà pour cette banque et ce type de sang'
-            ], 400);
+            return response()->json(['message' => 'Un stock existe déjà pour ce type de sang'], 422);
         }
 
-        $stock = BloodStock::create($request->all());
+        $stock = Stock::create([
+            'blood_bank_id' => $request->blood_bank_id,
+            'blood_type_id' => $request->blood_type_id,
+            'quantity_ml' => $request->quantity_ml,
+            'minimum_threshold' => $request->minimum_threshold,
+            'maximum_capacity' => $request->maximum_capacity,
+            'last_updated_by' => Auth::id()
+        ]);
 
         return response()->json([
             'message' => 'Stock créé avec succès',
@@ -323,7 +337,7 @@ class StockController extends Controller
      */
     public function destroy($id)
     {
-        $stock = BloodStock::find($id);
+        $stock = Stock::find($id);
 
         if (!$stock) {
             return response()->json([
@@ -343,5 +357,40 @@ class StockController extends Controller
         return response()->json([
             'message' => 'Stock supprimé avec succès'
         ]);
+    }
+
+    /**
+     * Récupérer tous les stocks d'une banque
+     */
+    public function getStocks($bankId)
+    {
+        $bank = BloodBank::findOrFail($bankId);
+
+        // Vérifier que l'utilisateur est admin de cette banque
+        if (Auth::user()->role !== 'admin' || Auth::user()->blood_bank_id !== $bank->id) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
+
+        $stocks = $bank->stocks()->with('bloodType')->get();
+
+        return response()->json($stocks);
+    }
+
+    /**
+     * Récupérer l'historique d'un stock
+     */
+    public function getHistory($stockId)
+    {
+        $stock = Stock::findOrFail($stockId);
+        $bank = $stock->bloodBank;
+
+        // Vérifier que l'utilisateur est admin de cette banque
+        if (Auth::user()->role !== 'admin' || Auth::user()->blood_bank_id !== $bank->id) {
+            return response()->json(['message' => 'Accès non autorisé'], 403);
+        }
+
+        $history = $stock->history()->with('updatedBy')->orderBy('created_at', 'desc')->get();
+
+        return response()->json($history);
     }
 }
