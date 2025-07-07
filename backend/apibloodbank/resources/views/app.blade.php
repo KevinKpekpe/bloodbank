@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>BloodLink - Sauvez des vies, donnez votre sang</title>
     <meta name="description" content="Plateforme de dons de sang connectant donneurs, médecins et banques de sang pour sauver des vies.">
 

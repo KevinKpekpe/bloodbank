@@ -6,6 +6,7 @@ use App\Models\BloodBank;
 use App\Models\BloodType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Inertia\Inertia;
 
 class BloodBankController extends Controller
 {
@@ -68,48 +69,117 @@ class BloodBankController extends Controller
     }
 
     /**
-     * Rechercher des banques par proximité
+     * Affiche la page publique de localisation des banques de sang
+     */
+    public function publicIndex()
+    {
+        return Inertia::render('Public/BloodBanks');
+    }
+
+    /**
+     * Recherche des banques de sang par proximité
      */
     public function searchNearby(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'latitude' => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180',
-            'radius' => 'nullable|numeric|min:1|max:500',
+        $request->validate([
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'radius_km' => 'nullable|numeric|min:1|max:500',
             'blood_type_id' => 'nullable|exists:blood_types,id',
+            'search' => 'nullable|string|max:255'
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
+        $latitude = $request->latitude;
+        $longitude = $request->longitude;
+        $radiusKm = $request->radius_km;
+        $bloodTypeId = $request->blood_type_id;
+        $search = $request->search;
+
+        // Si pas de coordonnées, on utilise le centre de la France
+        if (!$latitude || !$longitude) {
+            $latitude = 46.603354;
+            $longitude = 1.888334;
         }
 
-        $radius = $request->get('radius', 50);
-        $query = BloodBank::active()
-                         ->nearby($request->latitude, $request->longitude, $radius)
-                         ->with(['admin', 'bloodStocks.bloodType']);
+        $query = BloodBank::where('is_verified', true)
+            ->where('is_active', true);
+
+        // Recherche textuelle (insensible à la casse)
+        if ($search) {
+            $searchLower = strtolower($search);
+            $query->where(function ($q) use ($searchLower) {
+                $q->whereRaw('LOWER(name) LIKE ?', ['%' . $searchLower . '%'])
+                  ->orWhereRaw('LOWER(city) LIKE ?', ['%' . $searchLower . '%'])
+                  ->orWhereRaw('LOWER(postal_code) LIKE ?', ['%' . $searchLower . '%'])
+                  ->orWhereRaw('LOWER(address) LIKE ?', ['%' . $searchLower . '%']);
+            });
+        }
 
         // Filtrer par type de sang si spécifié
-        if ($request->has('blood_type_id')) {
-            $query->whereHas('bloodStocks', function ($q) use ($request) {
-                $q->where('blood_type_id', $request->blood_type_id)
+        if ($bloodTypeId) {
+            $query->whereHas('bloodStocks', function ($q) use ($bloodTypeId) {
+                $q->where('blood_type_id', $bloodTypeId)
                   ->where('quantity_ml', '>', 0);
             });
         }
 
-        $bloodBanks = $query->get();
+        $bloodBanks = $query->with(['bloodStocks.bloodType'])
+            ->get()
+            ->map(function ($bank) use ($latitude, $longitude) {
+                // Calculer la distance manuellement
+                $distance = $this->calculateDistance(
+                    $latitude,
+                    $longitude,
+                    $bank->latitude,
+                    $bank->longitude
+                );
+
+                return [
+                    'id' => $bank->id,
+                    'name' => $bank->name,
+                    'address' => $bank->address,
+                    'city' => $bank->city,
+                    'postal_code' => $bank->postal_code,
+                    'phone' => $bank->phone,
+                    'email' => $bank->email,
+                    'latitude' => $bank->latitude,
+                    'longitude' => $bank->longitude,
+                    'distance' => round($distance, 1),
+                    'stock_summary' => $bank->bloodStocks->groupBy('blood_type_id')->map(function ($items) {
+                        return [
+                            'total_quantity' => $items->sum('quantity_ml'),
+                            'status' => $items->sum('quantity_ml') > 1000 ? 'Disponible' : 'Faible'
+                        ];
+                    })
+                ];
+            })
+            ->sortBy('distance')
+            ->values();
 
         return response()->json([
-            'blood_banks' => $bloodBanks,
-            'search_params' => [
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'radius' => $radius,
-                'blood_type_id' => $request->blood_type_id
-            ]
+            'success' => true,
+            'data' => $bloodBanks,
+            'count' => $bloodBanks->count()
         ]);
+    }
+
+    /**
+     * Calculer la distance entre deux points géographiques (formule de Haversine)
+     */
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371; // Rayon de la Terre en km
+
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lonDelta = deg2rad($lon2 - $lon1);
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($lonDelta / 2) * sin($lonDelta / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 
     /**
