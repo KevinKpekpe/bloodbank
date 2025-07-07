@@ -9,3 +9,90 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Variables CSS personnalisées pour BloodLink */
+:root {
+    --blood-red: #dc2626;
+    --blood-red-dark: #b91c1c;
+    --blood-red-light: #fef2f2;
+    --white: #ffffff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+}
+
+/* Styles de base */
+body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+}
+
+/* Animations personnalisées */
+@keyframes pulse-red {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.animate-pulse-red {
+    animation: pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Boutons personnalisés */
+.btn-primary {
+    @apply bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl;
+}
+
+.btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-red-600 font-semibold py-3 px-6 rounded-lg border-2 border-red-600 transition-all duration-200 transform hover:scale-105;
+}
+
+.btn-outline {
+    @apply bg-transparent hover:bg-red-600 text-red-600 hover:text-white font-semibold py-3 px-6 rounded-lg border-2 border-red-600 transition-all duration-200;
+}
+
+/* Cards personnalisées */
+.card {
+    @apply bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+}
+
+/* Gradient personnalisé */
+.gradient-red {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.gradient-red-light {
+    background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+}
+
+/* Navigation */
+.nav-link {
+    @apply text-gray-700 hover:text-red-600 font-medium transition-colors duration-200;
+}
+
+.nav-link.active {
+    @apply text-red-600 font-semibold;
+}
+
+/* Hero section */
+.hero-pattern {
+    background-image: radial-gradient(circle at 1px 1px, rgba(220, 38, 38, 0.1) 1px, transparent 0);
+    background-size: 20px 20px;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+    .container {
+        @apply px-4;
+    }
+}
