@@ -1,0 +1,6 @@
+[
+  {
+    "type": "sqlite",
+    "path": "/home/spectre/Bureau/BloodBank/backend/apibloodbank/database/database.sqlite"
+  }
+]

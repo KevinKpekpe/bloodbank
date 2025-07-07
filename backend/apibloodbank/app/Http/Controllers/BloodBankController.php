@@ -16,6 +16,17 @@ class BloodBankController extends Controller
     {
         $query = BloodBank::active()->with(['admin', 'bloodStocks.bloodType']);
 
+        // Recherche par nom
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('description', 'like', '%' . $search . '%')
+                  ->orWhere('city', 'like', '%' . $search . '%')
+                  ->orWhere('address', 'like', '%' . $search . '%');
+            });
+        }
+
         // Filtres
         if ($request->has('partnership_level')) {
             $query->byPartnershipLevel($request->partnership_level);
