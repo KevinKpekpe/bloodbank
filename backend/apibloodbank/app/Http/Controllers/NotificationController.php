@@ -349,4 +349,76 @@ class NotificationController extends Controller
 
         return response()->json(['message' => 'Notifications supprimées']);
     }
+
+    /**
+     * Affiche la page de gestion des notifications (vue Blade)
+     */
+    public function showNotificationsPage()
+    {
+        $user = Auth::user();
+
+        $notifications = \App\Models\Notification::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        $unreadCount = \App\Models\Notification::where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->count();
+
+        return view('notifications.index', compact('notifications', 'unreadCount'));
+    }
+
+    /**
+     * Marque une notification comme lue (version web)
+     */
+    public function markAsReadWeb($id)
+    {
+        $user = Auth::user();
+
+        $notification = \App\Models\Notification::where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$notification) {
+            return back()->with('error', 'Notification non trouvée.');
+        }
+
+        $notification->update(['read_at' => now()]);
+
+        return back()->with('success', 'Notification marquée comme lue.');
+    }
+
+    /**
+     * Marque toutes les notifications comme lues (version web)
+     */
+    public function markAllAsReadWeb()
+    {
+        $user = Auth::user();
+
+        \App\Models\Notification::where('user_id', $user->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        return back()->with('success', 'Toutes les notifications ont été marquées comme lues.');
+    }
+
+    /**
+     * Supprime une notification (version web)
+     */
+    public function destroyWeb($id)
+    {
+        $user = Auth::user();
+
+        $notification = \App\Models\Notification::where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$notification) {
+            return back()->with('error', 'Notification non trouvée.');
+        }
+
+        $notification->delete();
+
+        return back()->with('success', 'Notification supprimée.');
+    }
 }

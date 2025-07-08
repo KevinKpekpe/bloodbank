@@ -6,6 +6,9 @@ use App\Http\Controllers\BloodBankController;
 use App\Http\Controllers\BloodBankRegistrationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DonationController;
+use App\Http\Controllers\StockController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\BloodRequestController;
 use Illuminate\Support\Facades\Auth;
 
 // Routes publiques
@@ -60,4 +63,32 @@ Route::middleware('auth')->group(function () {
     Route::get('/donations/book', [DonationController::class, 'showBookingForm'])->name('donations.book');
     Route::post('/donations/book', [DonationController::class, 'bookAppointmentWeb'])->name('donations.book.submit');
     Route::delete('/donations/{id}/cancel', [DonationController::class, 'cancelAppointmentWeb'])->name('donations.cancel');
+
+    // Routes pour la gestion des stocks (Admin et Blood Bank)
+    Route::prefix('stocks')->group(function () {
+        Route::get('/', [StockController::class, 'showStocksPage'])->name('stocks.index');
+        Route::get('/create', [StockController::class, 'showStockForm'])->name('stocks.create');
+        Route::post('/', [StockController::class, 'storeStockWeb'])->name('stocks.store');
+        Route::get('/{id}/edit', [StockController::class, 'showStockForm'])->name('stocks.edit');
+        Route::put('/{id}', [StockController::class, 'storeStockWeb'])->name('stocks.update');
+        Route::get('/movements', [StockController::class, 'showMovementsPage'])->name('stocks.movements');
+    });
+
+    // Routes pour les notifications
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'showNotificationsPage'])->name('notifications.index');
+        Route::patch('/{id}/read', [NotificationController::class, 'markAsReadWeb'])->name('notifications.mark-read');
+        Route::patch('/mark-all-read', [NotificationController::class, 'markAllAsReadWeb'])->name('notifications.mark-all-read');
+        Route::delete('/{id}', [NotificationController::class, 'destroyWeb'])->name('notifications.destroy');
+    });
+
+    // Routes pour les demandes de sang (Admin et Doctor)
+    Route::prefix('blood-requests')->group(function () {
+        Route::get('/', [BloodRequestController::class, 'showRequestsPage'])->name('blood-requests.index');
+        Route::get('/create', [BloodRequestController::class, 'showCreateForm'])->name('blood-requests.create');
+        Route::post('/', [BloodRequestController::class, 'storeRequestWeb'])->name('blood-requests.store');
+        Route::get('/{id}', [BloodRequestController::class, 'showRequestDetails'])->name('blood-requests.show');
+        Route::patch('/{id}/cancel', [BloodRequestController::class, 'cancel'])->name('blood-requests.cancel');
+        Route::get('/{id}/search-availability', [BloodRequestController::class, 'searchAvailability'])->name('blood-requests.search-availability');
+    });
 });

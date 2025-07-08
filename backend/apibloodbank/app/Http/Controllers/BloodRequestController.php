@@ -10,6 +10,7 @@ use App\Models\RequestFulfillment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth; // Added for web methods
 
 class BloodRequestController extends Controller
 {
@@ -364,5 +365,114 @@ class BloodRequestController extends Controller
         return response()->json([
             'statistics' => $statistics
         ]);
+    }
+
+    /**
+     * Affiche la page de gestion des demandes de sang (vue Blade)
+     */
+    public function showRequestsPage()
+    {
+        $user = Auth::user();
+
+        // Vérifier les permissions
+        if (!$user->role || ($user->role->name !== 'admin' && $user->role->name !== 'doctor')) {
+            return redirect()->route('dashboard')->with('error', 'Accès non autorisé.');
+        }
+
+        $query = \App\Models\BloodRequest::with(['patient', 'bloodType', 'requestedBy']);
+
+        // Filtrer selon le rôle
+        if ($user->role->name === 'doctor') {
+            $query->where('requested_by', $user->id);
+        }
+
+        $requests = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        $bloodTypes = \App\Models\BloodType::all();
+        $patients = \App\Models\Patient::all();
+
+        return view('blood-requests.index', compact('requests', 'bloodTypes', 'patients'));
+    }
+
+    /**
+     * Affiche le formulaire de création de demande (vue Blade)
+     */
+    public function showCreateForm()
+    {
+        $user = Auth::user();
+
+        // Vérifier les permissions
+        if (!$user->role || ($user->role->name !== 'admin' && $user->role->name !== 'doctor')) {
+            return redirect()->route('dashboard')->with('error', 'Accès non autorisé.');
+        }
+
+        $bloodTypes = \App\Models\BloodType::all();
+        $patients = \App\Models\Patient::all();
+
+        return view('blood-requests.create', compact('bloodTypes', 'patients'));
+    }
+
+    /**
+     * Traite la création d'une demande de sang (version web)
+     */
+    public function storeRequestWeb(Request $request)
+    {
+        $user = Auth::user();
+
+        // Vérifier les permissions
+        if (!$user->role || ($user->role->name !== 'admin' && $user->role->name !== 'doctor')) {
+            return redirect()->route('dashboard')->with('error', 'Accès non autorisé.');
+        }
+
+        $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'blood_type_id' => 'required|exists:blood_types,id',
+            'quantity_ml' => 'required|numeric|min:1',
+            'urgency_level' => 'required|in:low,medium,high,critical',
+            'reason' => 'required|string|max:500',
+            'required_date' => 'required|date|after:today',
+            'notes' => 'nullable|string|max:1000'
+        ]);
+
+        $bloodRequest = \App\Models\BloodRequest::create([
+            'patient_id' => $request->patient_id,
+            'blood_type_id' => $request->blood_type_id,
+            'quantity_ml' => $request->quantity_ml,
+            'urgency_level' => $request->urgency_level,
+            'reason' => $request->reason,
+            'required_date' => $request->required_date,
+            'notes' => $request->notes,
+            'requested_by' => $user->id,
+            'status' => 'pending'
+        ]);
+
+        return redirect()->route('blood-requests.index')->with('success', 'Demande de sang créée avec succès.');
+    }
+
+    /**
+     * Affiche les détails d'une demande (vue Blade)
+     */
+    public function showRequestDetails($id)
+    {
+        $user = Auth::user();
+
+        // Vérifier les permissions
+        if (!$user->role || ($user->role->name !== 'admin' && $user->role->name !== 'doctor')) {
+            return redirect()->route('dashboard')->with('error', 'Accès non autorisé.');
+        }
+
+        $bloodRequest = \App\Models\BloodRequest::with(['patient', 'bloodType', 'requestedBy', 'fulfillments.bloodBank'])
+            ->find($id);
+
+        if (!$bloodRequest) {
+            return redirect()->route('blood-requests.index')->with('error', 'Demande non trouvée.');
+        }
+
+        // Vérifier que l'utilisateur peut voir cette demande
+        if ($user->role->name === 'doctor' && $bloodRequest->requested_by !== $user->id) {
+            return redirect()->route('blood-requests.index')->with('error', 'Accès non autorisé.');
+        }
+
+        return view('blood-requests.show', compact('bloodRequest'));
     }
 }

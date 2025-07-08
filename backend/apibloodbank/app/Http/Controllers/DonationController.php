@@ -523,16 +523,21 @@ class DonationController extends Controller
      */
     private function checkEligibility($user)
     {
-        // Vérifier l'âge (18-70 ans)
-        $age = date_diff(date_create($user->birth_date), date_create('today'))->y;
-        if ($age < 18 || $age > 70) {
+        // Vérifier l'âge (18-70 ans) - utiliser date_of_birth au lieu de birth_date
+        if ($user->date_of_birth) {
+            $age = date_diff(date_create($user->date_of_birth), date_create('today'))->y;
+            if ($age < 18 || $age > 70) {
+                return false;
+            }
+        } else {
+            // Si pas de date de naissance, considérer comme inéligible
             return false;
         }
 
-        // Vérifier le poids (minimum 50kg)
-        if ($user->weight && $user->weight < 50) {
-            return false;
-        }
+        // Vérifier le poids (minimum 50kg) - champ weight n'existe pas, on skip cette vérification
+        // if ($user->weight && $user->weight < 50) {
+        //     return false;
+        // }
 
         // Vérifier le dernier don (minimum 56 jours)
         $lastDonation = Donation::where('donor_id', $user->id)
@@ -567,17 +572,21 @@ class DonationController extends Controller
         $reasons = [];
 
         // Vérifier l'âge
-        $age = date_diff(date_create($user->birth_date), date_create('today'))->y;
-        if ($age < 18) {
-            $reasons[] = 'Âge insuffisant (minimum 18 ans)';
-        } elseif ($age > 70) {
-            $reasons[] = 'Âge trop élevé (maximum 70 ans)';
+        if ($user->date_of_birth) {
+            $age = date_diff(date_create($user->date_of_birth), date_create('today'))->y;
+            if ($age < 18) {
+                $reasons[] = 'Âge insuffisant (minimum 18 ans)';
+            } elseif ($age > 70) {
+                $reasons[] = 'Âge trop élevé (maximum 70 ans)';
+            }
+        } else {
+            $reasons[] = 'Date de naissance non renseignée';
         }
 
-        // Vérifier le poids
-        if ($user->weight && $user->weight < 50) {
-            $reasons[] = 'Poids insuffisant (minimum 50 kg)';
-        }
+        // Vérifier le poids - champ weight n'existe pas, on skip cette vérification
+        // if ($user->weight && $user->weight < 50) {
+        //     $reasons[] = 'Poids insuffisant (minimum 50 kg)';
+        // }
 
         // Vérifier le dernier don
         $lastDonation = Donation::where('donor_id', $user->id)
@@ -738,10 +747,15 @@ class DonationController extends Controller
      */
     public function showBookingForm()
     {
+        $user = Auth::user();
         $bloodBanks = BloodBank::where('is_active', true)->get();
         $bloodTypes = \App\Models\BloodType::all();
 
-        return view('donations.book', compact('bloodBanks', 'bloodTypes'));
+        // Vérifier l'éligibilité
+        $eligible = $this->checkEligibility($user);
+        $eligibilityReasons = $eligible ? [] : $this->getEligibilityReasons($user);
+
+        return view('donations.book', compact('bloodBanks', 'bloodTypes', 'eligible', 'eligibilityReasons'));
     }
 
     /**

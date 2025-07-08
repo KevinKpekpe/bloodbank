@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BloodStock as Stock;
+use App\Models\BloodStock;
 use App\Models\StockMovement;
 use App\Models\BloodBank;
+use App\Models\BloodType;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -25,7 +26,7 @@ class StockController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Stock::with(['bloodBank', 'bloodType']);
+        $query = BloodStock::with(['bloodBank', 'bloodType']);
 
         if ($request->has('blood_bank_id')) {
             $query->where('blood_bank_id', $request->blood_bank_id);
@@ -47,7 +48,7 @@ class StockController extends Controller
      */
     public function show($id)
     {
-        $stock = Stock::with(['bloodBank', 'bloodType'])->find($id);
+        $stock = BloodStock::with(['bloodBank', 'bloodType'])->find($id);
 
         if (!$stock) {
             return response()->json([
@@ -65,7 +66,7 @@ class StockController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $stock = Stock::find($id);
+        $stock = BloodStock::find($id);
 
         if (!$stock) {
             return response()->json([
@@ -131,7 +132,7 @@ class StockController extends Controller
      */
     public function adjust(Request $request, $id)
     {
-        $stock = Stock::find($id);
+        $stock = BloodStock::find($id);
 
         if (!$stock) {
             return response()->json([
@@ -237,7 +238,7 @@ class StockController extends Controller
      */
     public function lowStockAlerts()
     {
-        $lowStocks = Stock::with(['bloodBank', 'bloodType'])
+        $lowStocks = BloodStock::with(['bloodBank', 'bloodType'])
                               ->whereRaw('quantity_ml <= minimum_threshold')
                               ->get();
 
@@ -252,7 +253,7 @@ class StockController extends Controller
      */
     public function statistics(Request $request)
     {
-        $query = Stock::with(['bloodBank', 'bloodType']);
+        $query = BloodStock::with(['bloodBank', 'bloodType']);
 
         if ($request->has('blood_bank_id')) {
             $query->where('blood_bank_id', $request->blood_bank_id);
@@ -309,7 +310,7 @@ class StockController extends Controller
         }
 
         // Vérifier qu'il n'y a pas déjà un stock pour ce type de sang
-        $existingStock = Stock::where('blood_bank_id', $request->blood_bank_id)
+        $existingStock = BloodStock::where('blood_bank_id', $request->blood_bank_id)
             ->where('blood_type_id', $request->blood_type_id)
             ->first();
 
@@ -317,7 +318,7 @@ class StockController extends Controller
             return response()->json(['message' => 'Un stock existe déjà pour ce type de sang'], 422);
         }
 
-        $stock = Stock::create([
+        $stock = BloodStock::create([
             'blood_bank_id' => $request->blood_bank_id,
             'blood_type_id' => $request->blood_type_id,
             'quantity_ml' => $request->quantity_ml,
@@ -337,7 +338,7 @@ class StockController extends Controller
      */
     public function destroy($id)
     {
-        $stock = Stock::find($id);
+        $stock = BloodStock::find($id);
 
         if (!$stock) {
             return response()->json([
@@ -381,7 +382,7 @@ class StockController extends Controller
      */
     public function getHistory($stockId)
     {
-        $stock = Stock::findOrFail($stockId);
+        $stock = BloodStock::findOrFail($stockId);
         $bank = $stock->bloodBank;
 
         // Vérifier que l'utilisateur est admin de cette banque
@@ -392,5 +393,168 @@ class StockController extends Controller
         $history = $stock->history()->with('updatedBy')->orderBy('created_at', 'desc')->get();
 
         return response()->json($history);
+    }
+
+    /**
+     * Affiche la page de gestion des stocks (vue Blade)
+     */
+    public function showStocksPage()
+    {
+        $user = Auth::user();
+
+        // Vérifier les permissions
+        if (!$user->role || ($user->role->name !== 'admin' && $user->role->name !== 'blood_bank')) {
+            return redirect()->route('dashboard')->with('error', 'Accès non autorisé.');
+        }
+
+        $bloodBanks = BloodBank::where('is_active', true)->get();
+        $bloodTypes = BloodType::all();
+
+        // Récupérer les stocks selon le rôle
+        if ($user->role->name === 'admin') {
+            $stocks = BloodStock::with(['bloodBank', 'bloodType'])
+                ->orderBy('blood_bank_id')
+                ->orderBy('blood_type_id')
+                ->paginate(20);
+        } else {
+            // Pour les banques de sang, afficher seulement leurs stocks
+            $bloodBank = BloodBank::where('admin_id', $user->id)->first();
+            if (!$bloodBank) {
+                return redirect()->route('dashboard')->with('error', 'Aucune banque de sang associée.');
+            }
+
+            $stocks = BloodStock::where('blood_bank_id', $bloodBank->id)
+                ->with(['bloodType'])
+                ->orderBy('blood_type_id')
+                ->paginate(20);
+        }
+
+        // Calculer les statistiques
+        $totalStocks = $stocks->total();
+        $lowStockCount = $stocks->where('quantity_ml', '<', 1000)->count();
+        $criticalStockCount = $stocks->where('quantity_ml', '<', 500)->count();
+
+        $stats = [
+            'totalStocks' => $totalStocks,
+            'lowStockCount' => $lowStockCount,
+            'criticalStockCount' => $criticalStockCount
+        ];
+
+        return view('stocks.index', compact('stocks', 'bloodBanks', 'bloodTypes', 'stats'));
+    }
+
+    /**
+     * Affiche le formulaire d'ajout/modification de stock (vue Blade)
+     */
+    public function showStockForm($id = null)
+    {
+        $user = Auth::user();
+
+        // Vérifier les permissions
+        if (!$user->role || ($user->role->name !== 'admin' && $user->role->name !== 'blood_bank')) {
+            return redirect()->route('dashboard')->with('error', 'Accès non autorisé.');
+        }
+
+        $bloodTypes = BloodType::all();
+        $stock = null;
+
+        if ($id) {
+            $stock = BloodStock::with(['bloodBank', 'bloodType'])->find($id);
+            if (!$stock) {
+                return redirect()->route('stocks.index')->with('error', 'Stock non trouvé.');
+            }
+
+            // Vérifier que l'utilisateur peut modifier ce stock
+            if ($user->role->name === 'blood_bank') {
+                $bloodBank = BloodBank::where('admin_id', $user->id)->first();
+                if (!$bloodBank || $stock->blood_bank_id !== $bloodBank->id) {
+                    return redirect()->route('stocks.index')->with('error', 'Accès non autorisé.');
+                }
+            }
+        }
+
+        // Pour les banques de sang, récupérer seulement leur banque
+        if ($user->role->name === 'blood_bank') {
+            $bloodBank = BloodBank::where('admin_id', $user->id)->first();
+            $bloodBanks = $bloodBank ? collect([$bloodBank]) : collect();
+        } else {
+            $bloodBanks = BloodBank::where('is_active', true)->get();
+        }
+
+        return view('stocks.form', compact('stock', 'bloodBanks', 'bloodTypes'));
+    }
+
+    /**
+     * Traite l'ajout/modification de stock (version web)
+     */
+    public function storeStockWeb(Request $request, $id = null)
+    {
+        $user = Auth::user();
+
+        // Vérifier les permissions
+        if (!$user->role || ($user->role->name !== 'admin' && $user->role->name !== 'blood_bank')) {
+            return redirect()->route('dashboard')->with('error', 'Accès non autorisé.');
+        }
+
+        $request->validate([
+            'blood_bank_id' => 'required|exists:blood_banks,id',
+            'blood_type_id' => 'required|exists:blood_types,id',
+            'quantity_ml' => 'required|numeric|min:0',
+            'minimum_threshold' => 'required|numeric|min:0',
+            'maximum_capacity' => 'required|numeric|min:0',
+            'notes' => 'nullable|string'
+        ]);
+
+        // Vérifier que l'utilisateur peut modifier cette banque
+        if ($user->role->name === 'blood_bank') {
+            $bloodBank = BloodBank::where('admin_id', $user->id)->first();
+            if (!$bloodBank || $request->blood_bank_id != $bloodBank->id) {
+                return back()->withErrors(['blood_bank_id' => 'Vous ne pouvez modifier que les stocks de votre banque.']);
+            }
+        }
+
+        if ($id) {
+            // Modification
+            $stock = BloodStock::find($id);
+            if (!$stock) {
+                return redirect()->route('stocks.index')->with('error', 'Stock non trouvé.');
+            }
+
+            $stock->update($request->all());
+            $message = 'Stock mis à jour avec succès.';
+        } else {
+            // Création
+            BloodStock::create($request->all());
+            $message = 'Stock créé avec succès.';
+        }
+
+        return redirect()->route('stocks.index')->with('success', $message);
+    }
+
+    /**
+     * Affiche l'historique des mouvements de stock (vue Blade)
+     */
+    public function showMovementsPage()
+    {
+        $user = Auth::user();
+
+        // Vérifier les permissions
+        if (!$user->role || ($user->role->name !== 'admin' && $user->role->name !== 'blood_bank')) {
+            return redirect()->route('dashboard')->with('error', 'Accès non autorisé.');
+        }
+
+        $query = StockMovement::with(['bloodBank', 'bloodType']);
+
+        // Filtrer selon le rôle
+        if ($user->role->name === 'blood_bank') {
+            $bloodBank = BloodBank::where('admin_id', $user->id)->first();
+            if ($bloodBank) {
+                $query->where('blood_bank_id', $bloodBank->id);
+            }
+        }
+
+        $movements = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        return view('stocks.movements', compact('movements'));
     }
 }
