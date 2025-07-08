@@ -72,9 +72,48 @@ class BloodBankController extends Controller
     /**
      * Affiche la page publique de localisation des banques de sang
      */
-    public function publicIndex()
+    public function publicIndex(Request $request)
     {
-        return Inertia::render('Public/BloodBanks');
+        Log::info('=== DÉBUT publicIndex ===');
+
+        try {
+            $query = BloodBank::active()->with(['bloodStocks.bloodType']);
+            Log::info('Query créée avec succès');
+
+            // Recherche par nom
+            if ($request->has('search')) {
+                $search = $request->search;
+                Log::info('Recherche appliquée: ' . $search);
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                      ->orWhere('description', 'like', '%' . $search . '%')
+                      ->orWhere('city', 'like', '%' . $search . '%')
+                      ->orWhere('address', 'like', '%' . $search . '%');
+                });
+            }
+
+            // Filtre par ville
+            if ($request->has('city')) {
+                Log::info('Filtre ville appliqué: ' . $request->city);
+                $query->where('city', 'like', '%' . $request->city . '%');
+            }
+
+            $bloodBanks = $query->orderBy('name')->paginate(15);
+            Log::info('Banques récupérées: ' . $bloodBanks->count() . ' banques');
+
+            // Log des données pour débogage
+            foreach ($bloodBanks->items() as $bank) {
+                Log::info("Banque: {$bank->name} - Lat: {$bank->latitude} - Lng: {$bank->longitude} - Stocks: " . $bank->bloodStocks->count());
+            }
+
+            Log::info('=== FIN publicIndex - Vue retournée ===');
+            return view('blood_banks', compact('bloodBanks'));
+
+        } catch (\Exception $e) {
+            Log::error('Erreur dans publicIndex: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            throw $e;
+        }
     }
 
     /**

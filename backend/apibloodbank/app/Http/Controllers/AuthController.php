@@ -19,6 +19,104 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /**
+     * Affiche le formulaire de connexion
+     */
+    public function showLoginForm()
+    {
+        return view('auth.login');
+    }
+
+    /**
+     * Affiche le formulaire d'inscription
+     */
+    public function showRegistrationForm()
+    {
+        return view('auth.register');
+    }
+
+    /**
+     * Traite la tentative de connexion (version web)
+     */
+    public function loginWeb(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+
+            return redirect()->intended(route('dashboard'));
+        }
+
+        return back()->withErrors([
+            'email' => 'Les identifiants fournis ne correspondent pas à nos enregistrements.',
+        ])->onlyInput('email');
+    }
+
+    /**
+     * Déconnecte l'utilisateur (version web)
+     */
+    public function logoutWeb(Request $request)
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
+    }
+
+    /**
+     * Traite l'inscription d'un nouvel utilisateur (version web)
+     */
+    public function registerWeb(Request $request)
+    {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'postal_code' => ['nullable', 'string', 'max:10'],
+            'blood_type_id' => ['nullable', 'exists:blood_types,id'],
+            'date_of_birth' => ['nullable', 'date'],
+            'gender' => ['nullable', 'in:male,female,other'],
+            'role' => ['required', 'in:donor,doctor'],
+            'terms' => ['required', 'accepted'],
+        ]);
+
+        // Récupérer le rôle correspondant
+        $role = Role::where('name', $request->role)->first();
+        if (!$role) {
+            return back()->withErrors(['role' => 'Rôle invalide.']);
+        }
+
+        // Créer l'utilisateur
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'city' => $request->city,
+            'postal_code' => $request->postal_code,
+            'blood_type_id' => $request->blood_type_id,
+            'date_of_birth' => $request->date_of_birth,
+            'gender' => $request->gender,
+            'role_id' => $role->id,
+            'is_eligible_donor' => $request->role === 'donor',
+        ]);
+
+        // Connecter l'utilisateur
+        Auth::login($user);
+
+        return redirect()->route('dashboard')->with('success', 'Compte créé avec succès !');
+    }
+
+    /**
      * Inscription d'un nouvel utilisateur
      *
      * Permet à un utilisateur de s'inscrire sur la plateforme avec un rôle spécifique.

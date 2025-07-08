@@ -80,7 +80,7 @@ const routes = [
         path: '/blood-bank/dashboard',
         name: 'blood-bank-dashboard',
         component: BloodBankDashboard,
-        meta: { requiresAuth: true, requiresRole: 'admin' }
+        meta: { requiresAuth: true, requiresRole: 'blood_bank' }
     },
     {
         path: '/donations',
@@ -111,11 +111,22 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach((to, from, next) => {
     const isAuthenticated = AuthService.isAuthenticated()
+    const currentUser = AuthService.getCurrentUser()
 
     // Routes qui nécessitent une authentification
     if (to.meta.requiresAuth && !isAuthenticated) {
         next('/login')
         return
+    }
+
+    // Routes qui nécessitent un rôle spécifique
+    if (to.meta.requiresRole && isAuthenticated) {
+        const userRole = currentUser?.role?.name || currentUser?.role
+        if (userRole !== to.meta.requiresRole) {
+            // Rediriger vers le dashboard ou une page d'erreur
+            next('/dashboard')
+            return
+        }
     }
 
     // Routes qui nécessitent d'être invité (non connecté)

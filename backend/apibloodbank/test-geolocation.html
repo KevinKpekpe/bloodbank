@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Géolocalisation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background: #dc2626;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #b91c1c; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test de Géolocalisation - BloodLink</h1>
+
+    <div class="test-section info">
+        <h3>Instructions</h3>
+        <p>Ce test vérifie que la géolocalisation fonctionne correctement dans votre navigateur.</p>
+        <p>Assurez-vous que le serveur Laravel fonctionne sur <code>http://localhost:8000</code></p>
+    </div>
+
+    <div class="test-section">
+        <h3>1. Test de Géolocalisation</h3>
+        <button onclick="testGeolocation()">Tester la géolocalisation</button>
+        <div id="geolocationResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test des APIs</h3>
+        <button onclick="testAPIs()">Tester les APIs</button>
+        <div id="apiResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test de la Page Complète</h3>
+        <button onclick="openFullPage()">Ouvrir la page complète</button>
+        <p>Ouvre la page de géolocalisation complète dans un nouvel onglet.</p>
+    </div>
+
+    <script>
+        async function testGeolocation() {
+            const resultDiv = document.getElementById('geolocationResult');
+            resultDiv.innerHTML = '<p>Test en cours...</p>';
+
+            if (!navigator.geolocation) {
+                resultDiv.innerHTML = '<div class="error"><p>❌ La géolocalisation n\'est pas supportée par votre navigateur</p></div>';
+                return;
+            }
+
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        timeout: 10000,
+                        enableHighAccuracy: true
+                    });
+                });
+
+                const { latitude, longitude } = position.coords;
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <p>✅ Géolocalisation réussie !</p>
+                        <p><strong>Latitude:</strong> ${latitude}</p>
+                        <p><strong>Longitude:</strong> ${longitude}</p>
+                        <p><strong>Précision:</strong> ${position.coords.accuracy} mètres</p>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <p>❌ Erreur de géolocalisation: ${error.message}</p>
+                        <p><strong>Code d'erreur:</strong> ${error.code}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testAPIs() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.innerHTML = '<p>Test des APIs en cours...</p>';
+
+            try {
+                // Test API banques de sang
+                const banksResponse = await fetch('http://localhost:8000/api/blood-banks');
+                const banksData = await banksResponse.json();
+
+                // Test API géolocalisation
+                const geoResponse = await fetch('http://localhost:8000/api/geolocation/nearby-banks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        latitude: 48.8566,
+                        longitude: 2.3522,
+                        radius_km: 50
+                    })
+                });
+                const geoData = await geoResponse.json();
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <p>✅ APIs fonctionnelles !</p>
+                        <p><strong>Banques de sang:</strong> ${banksData.blood_banks?.data?.length || 0} trouvées</p>
+                        <p><strong>Géolocalisation:</strong> ${geoData.success ? 'OK' : 'Erreur'}</p>
+                        <details>
+                            <summary>Détails des réponses</summary>
+                            <pre>${JSON.stringify({ banks: banksData, geo: geoData }, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <p>❌ Erreur lors du test des APIs: ${error.message}</p>
+                        <p>Assurez-vous que le serveur Laravel fonctionne sur le port 8000</p>
+                    </div>
+                `;
+            }
+        }
+
+        function openFullPage() {
+            window.open('http://localhost:8000/blood-banks', '_blank');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+/**
+ * Styles pour la carte des banques de sang
+ */
+
+/* Carte principale */
+#map {
+    height: 500px;
+    width: 100%;
+    border-radius: 8px;
+}
+
+/* Popups de la carte */
+.leaflet-popup-content {
+    margin: 8px;
+    font-family: 'Inter', sans-serif;
+}
+
+.bank-popup {
+    min-width: 200px;
+}
+
+.bank-popup h3 {
+    margin: 0 0 8px 0;
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.bank-popup p {
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+.distance-badge {
+    background: #dc2626;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Spinner de chargement */
+.loading-spinner {
+    display: none;
+}
+
+.loading-spinner.active {
+    display: inline-block;
+}
+
+/* Marqueur utilisateur */
+.user-marker {
+    z-index: 1000;
+}
+
+/* Animation pour les boutons */
+.btn-primary {
+    background: #dc2626;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #374151;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: 1px solid #d1d5db;
+    cursor: pointer;
+}
+
+.btn-outline:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+/* Éléments de la liste */
+.bank-item {
+    transition: all 0.2s;
+}
+
+.bank-item:hover {
+    background: #f9fafb;
+    transform: translateX(2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #map {
+        height: 300px;
+    }
+
+    .btn-primary,
+    .btn-outline {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bank-item {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* États de chargement */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Messages d'erreur */
+.error-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 16px 0;
+}
+
+/* Messages de succès */
+.success-message {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 16px 0;
+}

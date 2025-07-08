@@ -17,7 +17,12 @@ class BloodBankRegistrationController extends Controller
      */
     public function showRegistrationForm()
     {
-        return Inertia::render('BloodBank/Register');
+        $partnershipLevels = [
+            'public' => 'Public',
+            'private' => 'Privé',
+            'associative' => 'Associatif',
+        ];
+        return view('blood_bank_register', compact('partnershipLevels'));
     }
 
     /**

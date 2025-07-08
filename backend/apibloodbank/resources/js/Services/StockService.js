@@ -43,6 +43,17 @@ class StockService {
     }
   }
 
+  // Ajuster un stock (ajout ou retrait)
+  async adjust(stockId, adjustmentData) {
+    try {
+      const response = await this.client.post(`/stocks/${stockId}/adjust`, adjustmentData)
+      return response.data
+    } catch (error) {
+      console.error('Erreur lors de l\'ajustement du stock:', error)
+      throw error
+    }
+  }
+
   // Créer un nouveau stock
   async create(stockData) {
     try {

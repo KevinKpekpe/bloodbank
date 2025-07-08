@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 
 class PublicController extends Controller
 {
@@ -12,7 +11,7 @@ class PublicController extends Controller
      */
     public function home()
     {
-        return Inertia::render('Public/Home');
+        return view('home');
     }
 
     /**
@@ -20,7 +19,7 @@ class PublicController extends Controller
      */
     public function about()
     {
-        return Inertia::render('Public/About');
+        return view('about');
     }
 
     /**
@@ -28,7 +27,7 @@ class PublicController extends Controller
      */
     public function contact()
     {
-        return Inertia::render('Public/Contact');
+        return view('contact');
     }
 
     /**
@@ -36,6 +35,24 @@ class PublicController extends Controller
      */
     public function donate()
     {
-        return Inertia::render('Public/Donate');
+        return view('donate');
+    }
+
+    /**
+     * Traite l'envoi du formulaire de contact
+     */
+    public function sendContact(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string|max:1000',
+        ]);
+
+        // Pour l'instant, on simule l'envoi
+        // TODO: Implémenter l'envoi réel d'email
+
+        return redirect()->route('contact')->with('success', 'Votre message a été envoyé avec succès. Nous vous répondrons dans les plus brefs délais.');
     }
 }

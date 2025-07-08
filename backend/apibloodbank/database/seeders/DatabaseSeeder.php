@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             BloodTypeSeeder::class,
             AdminSeeder::class,
             BloodBankSeeder::class,
+            KinshasaBloodBankSeeder::class,
         ]);
 
         // Créer un utilisateur de test si nécessaire

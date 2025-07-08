@@ -691,4 +691,116 @@ class DonationController extends Controller
             ]);
         }
     }
+
+    /**
+     * Affiche la page de gestion des dons (vue Blade)
+     */
+    public function showDonationsPage()
+    {
+        $user = Auth::user();
+        $donations = Donation::where('donor_id', $user->id)
+            ->with(['bloodBank', 'bloodType'])
+            ->orderBy('donation_date', 'desc')
+            ->paginate(10);
+
+        $bloodBanks = BloodBank::where('is_active', true)->get();
+        $bloodTypes = \App\Models\BloodType::all();
+
+        // Calculer les statistiques
+        $totalDonations = Donation::where('donor_id', $user->id)
+            ->where('status', 'completed')
+            ->count();
+
+        $lastDonation = Donation::where('donor_id', $user->id)
+            ->where('status', 'completed')
+            ->orderBy('donation_date', 'desc')
+            ->first();
+
+        $nextDonation = Donation::where('donor_id', $user->id)
+            ->where('status', 'scheduled')
+            ->orderBy('donation_date', 'asc')
+            ->first();
+
+        $eligible = $this->checkEligibility($user);
+
+        $stats = [
+            'totalDonations' => $totalDonations,
+            'lastDonation' => $lastDonation ? \Carbon\Carbon::parse($lastDonation->donation_date)->format('d/m/Y') : 'Aucun',
+            'nextDonation' => $nextDonation ? \Carbon\Carbon::parse($nextDonation->donation_date)->format('d/m/Y') : 'Non planifié',
+            'eligible' => $eligible
+        ];
+
+        return view('donations.index', compact('donations', 'bloodBanks', 'bloodTypes', 'stats'));
+    }
+
+    /**
+     * Affiche le formulaire de prise de rendez-vous (vue Blade)
+     */
+    public function showBookingForm()
+    {
+        $bloodBanks = BloodBank::where('is_active', true)->get();
+        $bloodTypes = \App\Models\BloodType::all();
+
+        return view('donations.book', compact('bloodBanks', 'bloodTypes'));
+    }
+
+    /**
+     * Traite la prise de rendez-vous (version web)
+     */
+    public function bookAppointmentWeb(Request $request)
+    {
+        $request->validate([
+            'blood_bank_id' => 'required|exists:blood_banks,id',
+            'preferred_date' => 'required|date|after:today',
+            'preferred_time' => 'required|string',
+            'donation_type' => 'required|in:whole_blood,plasma,platelets',
+            'notes' => 'nullable|string'
+        ]);
+
+        $user = Auth::user();
+
+        // Vérifier l'éligibilité
+        if (!$this->checkEligibility($user)) {
+            return back()->withErrors(['eligibility' => 'Vous n\'êtes pas éligible pour faire un don à ce moment.']);
+        }
+
+        // Vérifier la disponibilité
+        if (!$this->checkAvailability($request->blood_bank_id, $request->preferred_date, $request->preferred_time)) {
+            return back()->withErrors(['availability' => 'Créneau non disponible.']);
+        }
+
+        // Créer le rendez-vous
+        $donation = Donation::create([
+            'donor_id' => $user->id,
+            'blood_bank_id' => $request->blood_bank_id,
+            'donation_date' => $request->preferred_date . ' ' . $request->preferred_time,
+            'donation_type' => $request->donation_type,
+            'status' => 'scheduled',
+            'notes' => $request->notes,
+            'quantity_ml' => $this->getDefaultQuantity($request->donation_type)
+        ]);
+
+        return redirect()->route('donations.index')->with('success', 'Rendez-vous réservé avec succès !');
+    }
+
+    /**
+     * Annule un rendez-vous (version web)
+     */
+    public function cancelAppointmentWeb($id)
+    {
+        $user = Auth::user();
+
+        $donation = Donation::where('id', $id)
+            ->where('donor_id', $user->id)
+            ->where('status', 'scheduled')
+            ->first();
+
+        if (!$donation) {
+            return back()->withErrors(['donation' => 'Rendez-vous non trouvé ou déjà annulé.']);
+        }
+
+        $donation->update(['status' => 'cancelled']);
+
+        return redirect()->route('donations.index')->with('success', 'Rendez-vous annulé avec succès.');
+    }
 }

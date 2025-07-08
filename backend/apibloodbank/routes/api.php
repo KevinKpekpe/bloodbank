@@ -63,10 +63,10 @@ Route::prefix('geolocation')->group(function () {
     Route::post('/geocode', [GeolocationController::class, 'geocode']); // Publique
     Route::get('/statistics', [GeolocationController::class, 'statistics']); // Publique
     Route::post('/search-by-city', [GeolocationController::class, 'searchBanksByCity']); // Publique
+    Route::post('/nearby-banks', [GeolocationController::class, 'nearbyBanks']); // Publique pour la page web
 
     // Routes protégées
     Route::middleware(['auth:sanctum'])->group(function () {
-        Route::post('/nearby-banks', [GeolocationController::class, 'nearbyBanks']);
         Route::post('/nearby-donors', [GeolocationController::class, 'nearbyDonors']);
         Route::post('/update-bank-coordinates', [GeolocationController::class, 'updateBankCoordinates'])->middleware('role:admin');
     });
