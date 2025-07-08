@@ -16,6 +16,9 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Additional Styles -->
+    @stack('styles')
 </head>
 <body class="font-sans antialiased bg-gray-50">
     <!-- Navigation -->
@@ -56,5 +59,8 @@
 
     <!-- Footer -->
     @include('layouts.footer')
+
+    <!-- Additional Scripts -->
+    @stack('scripts')
 </body>
 </html>

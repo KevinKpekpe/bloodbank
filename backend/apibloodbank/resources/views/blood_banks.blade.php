@@ -3,6 +3,7 @@
 @section('title', 'Banques de sang - BloodLink')
 @section('description', 'Trouvez une banque de sang près de chez vous et consultez les stocks disponibles.')
 
+@push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     #map {
@@ -52,6 +53,7 @@
         to { transform: rotate(360deg); }
     }
 </style>
+@endpush
 
 @section('content')
 <!-- Hero Section -->
@@ -193,16 +195,16 @@
         </div>
     </div>
 </div>
+@endsection
+
+@push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // Données des banques de sang depuis le serveur
 const bloodBanksData = @json($bloodBanks->items());
-console.log('=== DÉBUT SCRIPT CARTE ===');
-console.log('Données des banques:', bloodBanksData);
 
 class BloodBanksMap {
     constructor() {
-        console.log('=== CONSTRUCTEUR BloodBanksMap ===');
         this.map = null;
         this.markers = [];
         this.userMarker = null;
@@ -216,15 +218,11 @@ class BloodBanksMap {
      * Initialisation de la carte
      */
     init() {
-        console.log('=== INITIALISATION CARTE ===');
-
         try {
             // Centre par défaut (France)
             const defaultCenter = [46.603354, 1.888334];
-            console.log('Centre par défaut:', defaultCenter);
 
             const mapElement = document.getElementById('map');
-            console.log('Élément map trouvé:', mapElement);
 
             if (!mapElement) {
                 console.error('Élément #map non trouvé!');
@@ -232,21 +230,17 @@ class BloodBanksMap {
             }
 
             this.map = L.map('map').setView(defaultCenter, 6);
-            console.log('Carte Leaflet créée:', this.map);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(this.map);
-            console.log('Couche de tuiles ajoutée');
 
             // Charger les banques initiales
-            console.log('Ajout des marqueurs des banques...');
             this.addBankMarkers(this.currentBanks);
             this.updateResults();
 
             // Événements
             this.bindEvents();
-            console.log('=== INITIALISATION TERMINÉE ===');
 
         } catch (error) {
             console.error('Erreur lors de l\'initialisation:', error);
@@ -257,9 +251,6 @@ class BloodBanksMap {
      * Ajouter les marqueurs des banques
      */
     addBankMarkers(banks) {
-        console.log('=== AJOUT MARQUEURS ===');
-        console.log('Banques à ajouter:', banks);
-
         // Supprimer les anciens marqueurs
         this.markers.forEach(marker => {
             if (marker && this.map) {
@@ -274,41 +265,30 @@ class BloodBanksMap {
         }
 
         banks.forEach((bank, index) => {
-            console.log(`Traitement banque ${index + 1}:`, bank);
-
             if (bank && bank.latitude && bank.longitude) {
                 try {
                     const lat = parseFloat(bank.latitude);
                     const lng = parseFloat(bank.longitude);
-                    console.log(`Coordonnées: ${lat}, ${lng}`);
 
                     const marker = L.marker([lat, lng])
                         .addTo(this.map)
                         .bindPopup(this.createBankPopup(bank));
 
                     this.markers.push(marker);
-                    console.log(`Marqueur ajouté pour ${bank.name}`);
                 } catch (error) {
                     console.error('Erreur lors de la création du marqueur:', error);
                 }
-            } else {
-                console.warn(`Banque sans coordonnées: ${bank.name}`);
             }
         });
-
-        console.log(`Total marqueurs créés: ${this.markers.length}`);
 
         // Ajuster la vue si on a des marqueurs
         if (this.markers.length > 0) {
             try {
                 const group = new L.featureGroup(this.markers);
                 this.map.fitBounds(group.getBounds().pad(0.1));
-                console.log('Vue ajustée aux marqueurs');
             } catch (error) {
                 console.error('Erreur lors de l\'ajustement de la vue:', error);
             }
-        } else {
-            console.warn('Aucun marqueur à afficher');
         }
     }
 
@@ -695,15 +675,11 @@ function closeBankModal() {
 
 // Initialiser la carte quand le DOM est chargé
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== DOM CHARGÉ - INITIALISATION CARTE ===');
     try {
         window.bloodBanksMap = new BloodBanksMap();
-        console.log('=== CARTE INITIALISÉE AVEC SUCCÈS ===');
     } catch (error) {
         console.error('Erreur lors de l\'initialisation de la carte:', error);
     }
 });
 </script>
-@endsection
-
-
+@endpush
